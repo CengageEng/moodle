@@ -1374,6 +1374,38 @@ function lti_get_type_config($typeid) {
     return $typeconfig;
 }
 
+/**
+ * Translates the Enabled Capabilities as Config Options for email, name and grade
+ *
+ * @param $typeid
+ */
+function lti_get_capabilities_as_config($typeid) {
+    // LTI 2.0 capabilities are transformed as config so they can be enforces
+    $typeconfig = array();
+    $type =  lti_get_type($typeid);
+    if (!empty($type->toolproxyid)) {
+        $enabledcapabilities = explode("\n", $type->enabledcapability);
+        if (in_array('Result.autocreate', $enabledcapabilities)) {
+            $typeconfig['acceptgrades'] = LTI_SETTING_ALWAYS;
+        } else {
+            $typeconfig['acceptgrades'] = LTI_SETTING_NEVER;
+        }
+        if (in_array('Person.name.full', $enabledcapabilities) ||
+            in_array('Person.name.family', $enabledcapabilities) ||
+            in_array('Person.name.given', $enabledcapabilities)) {
+            $typeconfig['sendname'] = LTI_SETTING_ALWAYS;
+        } else {
+            $typeconfig['sendname'] = LTI_SETTING_NEVER;
+        }
+        if (in_array('Person.email.primary', $enabledcapabilities)) {
+            $typeconfig['sendemailaddr'] = LTI_SETTING_ALWAYS;
+        } else {
+            $typeconfig['sendemailaddr'] = LTI_SETTING_NEVER;
+        }
+    }
+    return $typeconfig;
+}
+
 function lti_get_tools_by_url($url, $state, $courseid = null) {
     $domain = lti_get_domain_from_url($url);
 
@@ -2474,12 +2506,12 @@ function lti_log_response($responsexml, $e = null) {
 }
 
 /**
- * Fetches LTI type configuration for an LTI instance
+ * Fetches LTI type for an LTI instance
  *
  * @param stdClass $instance
  * @return array Can be empty if no type is found
  */
-function lti_get_type_config_by_instance($instance) {
+function lti_get_typeid_by_instance($instance) {
     $typeid = null;
     if (empty($instance->typeid)) {
         $tool = lti_get_tool_by_url_match($instance->toolurl, $instance->course);
@@ -2489,8 +2521,27 @@ function lti_get_type_config_by_instance($instance) {
     } else {
         $typeid = $instance->typeid;
     }
+    return $typeid;
+}
+
+/**
+ * Fetches LTI type configuration for an LTI instance
+ *
+ * @param stdClass $instance
+ * @return array Can be empty if no type is found
+ */
+function lti_get_type_config_by_instance($instance) {
+    $typeid = lti_get_typeid_by_instance($instance);
     if (!empty($typeid)) {
         return lti_get_type_config($typeid);
+    }
+    return array();
+}
+
+function lti_get_capabilities_as_config_by_instance($instance) {
+    $typeid = lti_get_typeid_by_instance($instance);
+    if (!empty($typeid)) {
+        return lti_get_capabilities_as_config($typeid);
     }
     return array();
 }
