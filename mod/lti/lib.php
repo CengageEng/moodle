@@ -107,7 +107,6 @@ function lti_add_instance($lti, $mform) {
     }
 
     lti_force_type_config_settings($lti, lti_get_type_config_by_instance($lti));
-    lti_force_type_config_settings($lti, lti_get_capabilities_as_config_by_instance($lti));
 
     if (empty($lti->typeid) && isset($lti->urlmatchedtypeid)) {
         $lti->typeid = $lti->urlmatchedtypeid;
@@ -160,7 +159,6 @@ function lti_update_instance($lti, $mform) {
     }
 
     lti_force_type_config_settings($lti, lti_get_type_config_by_instance($lti));
-    lti_force_type_config_settings($lti, lti_get_capabilities_as_config_by_instance($lti));
 
     if (isset($lti->instructorchoiceacceptgrades) && $lti->instructorchoiceacceptgrades == LTI_SETTING_ALWAYS) {
         lti_grade_item_update($lti);
