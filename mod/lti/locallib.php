@@ -880,12 +880,7 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
         }
         if (isset($item->icon->{'@id'})) {
             $iconurl = new moodle_url($item->icon->{'@id'});
-            // Assign item's icon URL to secureicon or icon depending on its scheme.
-            if (strtolower($iconurl->get_scheme()) === 'https') {
-                $config->secureicon = $iconurl->out(false);
-            } else {
-                $config->icon = $iconurl->out(false);
-            }
+            $config->icon = $iconurl->out(false);
         }
         if (isset($item->url)) {
             $url = new moodle_url($item->url);
