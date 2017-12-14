@@ -1854,6 +1854,18 @@ function lti_get_type_type_config($id) {
         $type->lti_module_class_type = $config['module_class_type'];
     }
 
+    // Get the parameters from the LTI ADVANTAGE services.
+    $services = lti_get_services();
+    foreach ($services as $service) {
+        $configurationparameters = $service->get_configuration_parameter_names();
+        foreach ($configurationparameters as $ltiserviceparameter) {
+            $shortltiserviceparameter = substr($ltiserviceparameter, 11);
+            if (isset($config[$shortltiserviceparameter])) {
+                $type->$ltiserviceparameter = $config[$shortltiserviceparameter];
+            }
+        }
+    }
+
     return $type;
 }
 
@@ -1917,6 +1929,13 @@ function lti_update_type($type, $config) {
                 $record->value = $value;
                 lti_update_config($record);
             }
+            if (substr($key, 0, 11) == 'ltiservice_' && !is_null($value)) {
+                $record = new \StdClass();
+                $record->typeid = $type->id;
+                $record->name = substr($key, 11);
+                $record->value = $value;
+                lti_update_config($record);
+            }
         }
         require_once($CFG->libdir.'/modinfolib.php');
         if ($clearcache) {
@@ -1967,6 +1986,14 @@ function lti_add_type($type, $config) {
                 $record = new \StdClass();
                 $record->typeid = $id;
                 $record->name = substr($key, 4);
+                $record->value = $value;
+
+                lti_add_config($record);
+            }
+            if (substr($key, 0, 11) == 'ltiservice_' && !is_null($value)) {
+                $record = new \StdClass();
+                $record->typeid = $id;
+                $record->name = substr($key, 11);
                 $record->value = $value;
 
                 lti_add_config($record);
