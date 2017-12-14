@@ -160,6 +160,9 @@ class mod_lti_edit_types_form extends moodleform{
         $mform->setAdvanced('lti_secureicon');
         $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
 
+        // Display the lti advantage services.
+        $this->get_lti_advantage_services($mform);
+
         if (!$istool) {
             // Add privacy preferences fieldset where users choose whether to send their data.
             $mform->addElement('header', 'privacy', get_string('privacy', 'lti'));
@@ -252,5 +255,71 @@ class mod_lti_edit_types_form extends moodleform{
             unset($data->lti_contentitem);
         }
         return $data;
+    }
+
+    /**
+     * Generates the lti advantage extra configuration adding it to the mform
+     *
+     * @return $mform?
+     */
+    public function get_lti_advantage_services(&$mform) {
+        // For each service add the label and get the array of configuration.
+        $services = lti_get_services();
+        $displayheader = true;
+        foreach ($services as $service) {
+            $configurationoptions = $service->get_configuration_options();
+            if (sizeof($configurationoptions)>0) {
+                if ($displayheader) {
+                    $mform->addElement('header', 'services', get_string('services', 'lti'));
+                    $displayheader = false;
+                }
+                foreach ($configurationoptions as $configurationoption) {
+                    switch ($configurationoption[0]){
+                        case 'select':
+                            $mform->addElement('select',
+                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
+                            if (!is_null($configurationoption[2])) {
+                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
+                            }
+                            if (!is_null($configurationoption[3])) {
+                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
+                            }
+                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
+                                $mform->addHelpButton($configurationoption[1][0],
+                                        $configurationoption[4],  $configurationoption[5]);
+                            }
+                            break;
+                        case 'text':
+                            $mform->addElement('text',
+                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
+                            if (!is_null($configurationoption[2])) {
+                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
+                            }
+                            if (!is_null($configurationoption[3])) {
+                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
+                            }
+                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
+                                $mform->addHelpButton($configurationoption[1][0],
+                                        $configurationoption[4],  $configurationoption[5]);
+                            }
+                            break;
+                        case 'checkbox':
+                            $mform->addElement('checkbox',
+                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
+                            if (!is_null($configurationoption[2])) {
+                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
+                            }
+                            if (!is_null($configurationoption[3])) {
+                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
+                            }
+                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
+                                $mform->addHelpButton($configurationoption[1][0],
+                                        $configurationoption[4],  $configurationoption[5]);
+                            }
+                            break;
+                    }
+                }
+            }
+        }
     }
 }

@@ -138,6 +138,78 @@ abstract class service_base {
     abstract public function get_resources();
 
     /**
+     * Return an array of options to add to the add/edit external tool.
+     * The array will have elements with this attributes:
+     *
+     * - type ( only 'select', 'text', 'passwordunmask' or 'checkbox' are
+     * allowed by the moment) view lib/pear/HTML/QuickForm for all types.
+     * - array of type specific parameters:
+     *  - if select it needs:
+     *      - name.
+     *      - label.
+     *      - array of options.
+     *  - if text it needs:
+     *      - name.
+     *      - label.
+     *      - parameters (example: array('size' => '64')).
+     *  - if checkbox it needs:
+     *      - name.
+     *      - main label (left side of the form).
+     *      - after checkbox lable.
+     * - setType value or null, ('int', 'text'...) If null, no default value.
+     * - setDefault or null ('2', ...) If null, no default value.
+     * - HelpButton $identifier usually the same than the name and it will be
+     *  in the texts file with _help at the end, If null, no help button.
+     * - HelpButton $component component to find the languages files. If null, no help button.
+     *
+     * @return an array of options to add to the add/edit external tool or null if no options to add.
+     *
+     */
+    public function get_configuration_options() {
+        return array();
+    }
+
+    /**
+     * Return an array with the names of the parameters that the service will be saving in the configuration
+     *
+     * @return  an array with the names of the parameters that the service will be saving in the configuration
+     *
+     */
+    public function get_configuration_parameter_names() {
+        return array();
+    }
+    
+    /**
+     * Default implementation will check for the
+     * existence of at least one mod_lti entry for that tool and context. It may be overridden
+     * if other inferences can be done.
+     *
+     * @return True if tool is used in context. 
+     */
+    public function is_used_in_context($lti_type, $course) {
+        global $DB;
+
+        $ok = false;
+        // First check if it is a course tool.
+        if ($DB->get_record('lti', array('course' => $course, 'typeid' => $lti_type)) != false) {
+            $ok = true;
+        // If not, let's check if it is a global tool.
+        } else if ($DB->get_record('lti', array('course' => '0', 'typeid' => $lti_type)) != false) {
+            $ok = true;
+        }
+        return $ok; 
+    }
+    
+
+    /**
+     * @return an array of key/value pairs to add as launch parameters; type is passed to check the configuration
+     * and not return parameters for services not used.
+     */
+    public function get_launch_parameters($messagetype, $course, $user, $lti_type, $mod_lti = null) {
+        return array();
+    }
+    
+    /**
      * Get the path for service requests.
      *
      * @return string
@@ -206,6 +278,36 @@ abstract class service_base {
         return $ok;
 
     }
+    
+    /**
+     * Check that the request has been properly signed.
+     *
+     * @param string $type_id        Tool id
+     * @param string $courseid       The course we are at
+     * @param string $body           Request body (null if none)
+     *
+     * @return boolean
+     */
+    public function check_type($type_id, $courseid, $body = null) {
+
+        $ok = false;
+        $tool = null;
+        $consumerkey = lti\get_oauth_key_from_headers();
+        if (empty($type_id)) {
+            return $ok;
+        } else if (is_used_in_context($type_id, $courseid)) {
+            $tool = lti_get_type_type_config($type_id);
+            if ($tool!== false) {
+                if (!$this->is_unsigned() && ($tool->resourcekey== $consumerkey)) {
+                    $ok = $this->check_signature($tool->resourcekey, $tool->password, $body);
+                } else {
+                    $ok = $this->is_unsigned();
+                }
+            }
+        }
+        return $ok;
+    }
+    
 
     /**
      * Check the request signature.

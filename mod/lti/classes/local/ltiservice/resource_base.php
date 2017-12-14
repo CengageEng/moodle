@@ -232,6 +232,46 @@ abstract class resource_base {
         return $ok;
 
     }
+    
+    /**
+     * Check to make sure the request is valid.
+     *
+     * @param string $typeid        The typeid we want to use
+     * @param string $contextid     The course we are at
+     * @param string $body          Body of HTTP request message
+     *
+     * @return boolean
+     */
+    public function check_type($typeid, $contextid, $permissionrequested, $body = null) {
+        
+        $ok = false;
+        if ($this->get_service()->check_type($typeid, $contextid, $body)) {
+            $tool = lti_get_type_type_config($type_id);
+            $neededpermissions = get_permissions($lti_type); 
+            foreach ($permissions as $permission) {
+                if ($permission == $permissionrequested) {
+                        $ok = true;
+                        break;
+                }
+            }
+            if (!$ok) {
+                debugging('Requested service ' . $permissionrequested . ' not included in tool type: ' . $typeid);
+            }
+        }
+        return $ok;
+
+    }
+    
+    /**
+     * get permissions from the config of the tool for that resource
+     * 
+     * @return Array with the permissions related to this resource by the $lti_type or empty if none. 
+     */
+    public function get_permissions($lti_type) {
+        return array();
+    }
+    
+    
 
     /**
      * Parse a value for custom parameter substitution variables.
