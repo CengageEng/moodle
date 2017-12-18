@@ -268,7 +268,7 @@ class mod_lti_edit_types_form extends moodleform{
         $displayheader = true;
         foreach ($services as $service) {
             $configurationoptions = $service->get_configuration_options();
-            if (sizeof($configurationoptions)>0) {
+            if (count($configurationoptions) > 0) {
                 if ($displayheader) {
                     $mform->addElement('header', 'services', get_string('services', 'lti'));
                     $displayheader = false;

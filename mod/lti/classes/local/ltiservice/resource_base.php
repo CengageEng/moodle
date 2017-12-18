@@ -232,7 +232,7 @@ abstract class resource_base {
         return $ok;
 
     }
-    
+
     /**
      * Check to make sure the request is valid.
      *
@@ -243,11 +243,10 @@ abstract class resource_base {
      * @return boolean
      */
     public function check_type($typeid, $contextid, $permissionrequested, $body = null) {
-        
+
         $ok = false;
         if ($this->get_service()->check_type($typeid, $contextid, $body)) {
-            $tool = lti_get_type_type_config($type_id);
-            $neededpermissions = get_permissions($lti_type); 
+            $neededpermissions = get_permissions($typeid);
             foreach ($permissions as $permission) {
                 if ($permission == $permissionrequested) {
                         $ok = true;
@@ -261,17 +260,15 @@ abstract class resource_base {
         return $ok;
 
     }
-    
+
     /**
      * get permissions from the config of the tool for that resource
-     * 
-     * @return Array with the permissions related to this resource by the $lti_type or empty if none. 
+     *
+     * @return Array with the permissions related to this resource by the $lti_type or empty if none.
      */
-    public function get_permissions($lti_type) {
+    public function get_permissions($ltitype) {
         return array();
     }
-    
-    
 
     /**
      * Parse a value for custom parameter substitution variables.
