@@ -710,7 +710,7 @@ function lti_build_content_item_selection_request($id, $course, moodle_url $retu
     }
 
     // Add the parameters configured by the LTI advantage services.
-    if ($typeid && !$islti2) {
+    if ($id && !$islti2) {
         $services = lti_get_services();
         foreach ($services as $service) {
             $ltiadvantageparameters = $service->get_launch_parameters('ContentItemSelectionRequest',

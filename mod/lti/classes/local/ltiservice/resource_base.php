@@ -243,11 +243,10 @@ abstract class resource_base {
      * @return boolean
      */
     public function check_type($typeid, $contextid, $permissionrequested, $body = null) {
-
         $ok = false;
         if ($this->get_service()->check_type($typeid, $contextid, $body)) {
-            $neededpermissions = get_permissions($typeid);
-            foreach ($permissions as $permission) {
+            $neededpermissions = $this->get_permissions($typeid);
+            foreach ($neededpermissions as $permission) {
                 if ($permission == $permissionrequested) {
                         $ok = true;
                         break;

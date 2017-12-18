@@ -305,11 +305,11 @@ abstract class service_base {
         $consumerkey = lti\get_oauth_key_from_headers();
         if (empty($typeid)) {
             return $ok;
-        } else if (is_used_in_context($typeid, $courseid)) {
+        } else if ($this->is_used_in_context($typeid, $courseid)) {
             $tool = lti_get_type_type_config($typeid);
             if ($tool !== false) {
-                if (!$this->is_unsigned() && ($tool->resourcekey == $consumerkey)) {
-                    $ok = $this->check_signature($tool->resourcekey, $tool->password, $body);
+                if (!$this->is_unsigned() && ($tool->lti_resourcekey== $consumerkey)) {
+                    $ok = $this->check_signature($tool->lti_resourcekey, $tool->lti_password, $body);
                 } else {
                     $ok = $this->is_unsigned();
                 }
