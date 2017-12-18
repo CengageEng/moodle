@@ -178,37 +178,49 @@ abstract class service_base {
     public function get_configuration_parameter_names() {
         return array();
     }
-    
+
     /**
      * Default implementation will check for the
      * existence of at least one mod_lti entry for that tool and context. It may be overridden
      * if other inferences can be done.
      *
-     * @return True if tool is used in context. 
+     * @param $courseid. The course id.
+     * @param $typeid. The tool lti type id.
+     *
+     * @return True if tool is used in context.
      */
-    public function is_used_in_context($lti_type, $course) {
+    public function is_used_in_context($typeid, $courseid) {
         global $DB;
 
         $ok = false;
         // First check if it is a course tool.
-        if ($DB->get_record('lti', array('course' => $course, 'typeid' => $lti_type)) != false) {
+        if ($DB->get_record('lti', array('course' => $courseid, 'typeid' => $typeid)) != false) {
             $ok = true;
-        // If not, let's check if it is a global tool.
-        } else if ($DB->get_record('lti', array('course' => '0', 'typeid' => $lti_type)) != false) {
+            // If not, let's check if it is a global tool.
+        } else if ($DB->get_record('lti', array('course' => '0', 'typeid' => $typeid)) != false) {
             $ok = true;
         }
-        return $ok; 
+        return $ok;
     }
-    
 
     /**
-     * @return an array of key/value pairs to add as launch parameters; type is passed to check the configuration
+     * Return an array of key/values to add to the launch parameters.
+     *
+     * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
+     * @param $courseid. the course id.
+     * @param $userid. The user id.
+     * @param $typeid. The tool lti type id.
+     * @param $modlti. The id of the lti activity.
+     *
+     * The type is passed to check the configuration
      * and not return parameters for services not used.
+     *
+     * @return an array of key/value pairs to add as launch parameters.
      */
-    public function get_launch_parameters($messagetype, $course, $user, $lti_type, $mod_lti = null) {
+    public function get_launch_parameters($messagetype, $courseid, $userid, $typeid, $modlti = null) {
         return array();
     }
-    
+
     /**
      * Get the path for service requests.
      *
@@ -274,11 +286,9 @@ abstract class service_base {
         if ($ok) {
             $this->toolproxy = $toolproxy;
         }
-
         return $ok;
-
     }
-    
+
     /**
      * Check that the request has been properly signed.
      *
@@ -288,17 +298,17 @@ abstract class service_base {
      *
      * @return boolean
      */
-    public function check_type($type_id, $courseid, $body = null) {
+    public function check_type($typeid, $courseid, $body = null) {
 
         $ok = false;
         $tool = null;
         $consumerkey = lti\get_oauth_key_from_headers();
-        if (empty($type_id)) {
+        if (empty($typeid)) {
             return $ok;
-        } else if (is_used_in_context($type_id, $courseid)) {
-            $tool = lti_get_type_type_config($type_id);
-            if ($tool!== false) {
-                if (!$this->is_unsigned() && ($tool->resourcekey== $consumerkey)) {
+        } else if (is_used_in_context($typeid, $courseid)) {
+            $tool = lti_get_type_type_config($typeid);
+            if ($tool !== false) {
+                if (!$this->is_unsigned() && ($tool->resourcekey == $consumerkey)) {
                     $ok = $this->check_signature($tool->resourcekey, $tool->password, $body);
                 } else {
                     $ok = $this->is_unsigned();
@@ -307,7 +317,6 @@ abstract class service_base {
         }
         return $ok;
     }
-    
 
     /**
      * Check the request signature.

@@ -96,7 +96,7 @@ define('LTI_VERSION_2', 'LTI-2p0');
  * @since  Moodle 3.0
  */
 function lti_get_launch_data($instance) {
-    global $PAGE, $CFG;
+    global $PAGE, $CFG, $USER;
 
     if (empty($instance->typeid)) {
         $tool = lti_get_tool_by_url_match($instance->toolurl, $instance->course);
@@ -229,6 +229,18 @@ function lti_get_launch_data($instance) {
     }
 
     $requestparams['launch_presentation_return_url'] = $returnurl;
+
+    // Add the parameters configured by the LTI advantage services.
+    if ($typeid && !$islti2) {
+        $services = lti_get_services();
+        foreach ($services as $service) {
+            $ltiadvantageparameters = $service->get_launch_parameters('basic-lti-launch-request',
+                    $course->id, $USER->id , $typeid, $instance->id);
+            foreach ($ltiadvantageparameters as $ltiadvantagekey => $ltiadvantagevalue) {
+                $requestparams[$ltiadvantagekey] = $ltiadvantagevalue;
+            }
+        }
+    }
 
     // Allow request params to be updated by sub-plugins.
     $plugins = core_component::get_plugin_list('ltisource');
@@ -619,6 +631,8 @@ function lti_build_custom_parameters($toolproxy, $tool, $instance, $params, $cus
 function lti_build_content_item_selection_request($id, $course, moodle_url $returnurl, $title = '', $text = '', $mediatypes = [],
                                                   $presentationtargets = [], $autocreate = false, $multiple = false,
                                                   $unsigned = false, $canconfirm = false, $copyadvice = false) {
+    global $USER;
+
     $tool = lti_get_type($id);
     // Validate parameters.
     if (!$tool) {
@@ -693,6 +707,18 @@ function lti_build_content_item_selection_request($id, $course, moodle_url $retu
     if ($islti2) {
         $lti2params = lti_build_request_lti2($tool, $requestparams);
         $requestparams = array_merge($requestparams, $lti2params);
+    }
+
+    // Add the parameters configured by the LTI advantage services.
+    if ($typeid && !$islti2) {
+        $services = lti_get_services();
+        foreach ($services as $service) {
+            $ltiadvantageparameters = $service->get_launch_parameters('ContentItemSelectionRequest',
+                    $course->id, $USER->id , $id);
+            foreach ($ltiadvantageparameters as $ltiadvantagekey => $ltiadvantagevalue) {
+                $requestparams[$ltiadvantagekey] = $ltiadvantagevalue;
+            }
+        }
     }
 
     // Get standard request parameters and merge to the request parameters.
