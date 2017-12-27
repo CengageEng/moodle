@@ -84,9 +84,15 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
                 throw new \Exception(null, 404);
             }
             $tool = $DB->get_record('lti_types', array('id' => $lti->typeid));
-            $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid));
-            if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
-                throw new \Exception(null, 401);
+            if ($tool->toolproxyid == 0) { // We wil use the same permission for this and contextmembers.
+                if (!$this->check_type($lti->typeid, $lti->course, 'ToolProxyBinding.memberships.url:get', $body = null)) {
+                    throw new \Exception(null, 401);
+                }
+            } else {
+                $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid));
+                if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
+                    throw new \Exception(null, 401);
+                }
             }
             if (!($course = $DB->get_record('course', array('id' => $lti->course), 'id', IGNORE_MISSING))) {
                 throw new \Exception(null, 404);
@@ -101,7 +107,6 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
             if ($info->is_available_for_all()) {
                 $info = null;
             }
-
             $json = memberships::get_users_json($this, $context, $lti->course, $tool, $role, $limitfrom, $limitnum, $lti, $info);
 
             $response->set_content_type($this->formats[0]);
@@ -111,6 +116,20 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
             $response->set_code($e->getCode());
         }
 
+    }
+
+    /**
+     * get permissions from the config of the tool for that resource
+     *
+     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     */
+    public function get_permissions($typeid) {
+        $tool = lti_get_type_type_config($typeid);
+        if ($tool->ltiservice_memberships == '1') {
+            return array('ToolProxyBinding.memberships.url:get');
+        } else {
+            return array();
+        }
     }
 
     /**

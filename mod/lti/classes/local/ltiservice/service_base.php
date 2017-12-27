@@ -207,7 +207,7 @@ abstract class service_base {
      * Return an array of key/values to add to the launch parameters.
      *
      * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
-     * @param $courseid. the course id.
+     * @param $course. the course id.
      * @param $userid. The user id.
      * @param $typeid. The tool lti type id.
      * @param $modlti. The id of the lti activity.
@@ -308,7 +308,7 @@ abstract class service_base {
         } else if ($this->is_used_in_context($typeid, $courseid)) {
             $tool = lti_get_type_type_config($typeid);
             if ($tool !== false) {
-                if (!$this->is_unsigned() && ($tool->lti_resourcekey== $consumerkey)) {
+                if (!$this->is_unsigned() && ($tool->lti_resourcekey == $consumerkey)) {
                     $ok = $this->check_signature($tool->lti_resourcekey, $tool->lti_password, $body);
                 } else {
                     $ok = $this->is_unsigned();
