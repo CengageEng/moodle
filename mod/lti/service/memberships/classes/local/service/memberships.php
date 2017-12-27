@@ -165,25 +165,41 @@ EOD;
             }
             if ($include) {
                 $member = new \stdClass();
-                if (in_array('User.id', $enabledcapabilities)) {
+                $toolconfig = lti_get_type_type_config($tool->id);
+                if (in_array('User.id', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilityuserid)
+                                && $toolconfig->ltiservice_membershipcapabilityuserid == 1)) {
                     $member->userId = $user->id;
                 }
-                if (in_array('Person.sourcedId', $enabledcapabilities)) {
+                if (in_array('Person.sourcedId', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonsourcedid)
+                                && $toolconfig->ltiservice_membershipcapabilitypersonsourcedid == 1)) {
                     $member->sourcedId = format_string($user->idnumber);
                 }
-                if (in_array('Person.name.full', $enabledcapabilities)) {
+                if (in_array('Person.name.full', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamefull)
+                                && $toolconfig->ltiservice_membershipcapabilitypersonnamefull == 1)) {
                     $member->name = format_string("{$user->firstname} {$user->lastname}");
                 }
-                if (in_array('Person.name.given', $enabledcapabilities)) {
+                if (in_array('Person.name.given', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamegiven)
+                                && $toolconfig->ltiservice_membershipcapabilitypersonnamegiven == 1)) {
                     $member->givenName = format_string($user->firstname);
                 }
-                if (in_array('Person.name.family', $enabledcapabilities)) {
+                if (in_array('Person.name.family', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamefamily)
+                                && $toolconfig->ltiservice_membershipcapabilitypersonnamefamily == 1)) {
                     $member->familyName = format_string($user->lastname);
                 }
-                if (in_array('Person.email.primary', $enabledcapabilities)) {
+                if (in_array('Person.email.primary', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonemailprimary)
+                                && $toolconfig->ltiservice_membershipcapabilitypersonemailprimary == 1)) {
                     $member->email = format_string($user->email);
                 }
-                if (in_array('Result.sourcedId', $enabledcapabilities) && !empty($lti) && !empty($lti->servicesalt)) {
+                if ((in_array('Result.sourcedId', $enabledcapabilities)
+                        || (isset($toolconfig->ltiservice_membershipcapabilityresultsourcedid)
+                                && $toolconfig->ltiservice_membershipcapabilityresultsourcedid == 1))
+                        && !empty($lti) && !empty($lti->servicesalt)) {
                     $member->resultSourcedId = json_encode(lti_build_sourcedid($lti->id, $user->id, $lti->servicesalt,
                                                            $lti->typeid));
                 }
@@ -210,6 +226,210 @@ EOD;
 
         return $json;
 
+    }
+
+
+    /**
+     * Return an array of options to add to the add/edit external tool.
+     * The array will have elements with this attributes:
+     *
+     * - type ( only 'select', 'text', 'checkbox' are
+     * allowed by the moment) view lib/pear/HTML/QuickForm for all types.
+     * - array of type specific parameters:
+     *  - if select it needs:
+     *      - name.
+     *      - label.
+     *      - array of options.
+     *  - if text it needs:
+     *      - name.
+     *      - label.
+     *      - parameters (example: array('size' => '64')).
+     *  - if checkbox it needs:
+     *      - name.
+     *      - main label (left side of the form).
+     *      - after checkbox lable.
+     * - setType value or null, ('int', 'text'...) If null, no default value.
+     * - setDefault or null ('2', ...) If null, no default value.
+     * - HelpButton $identifier usually the same than the name and it will be
+     *  in the texts file with _help at the end, If null, no help button.
+     * - HelpButton $component component to find the languages files. If null, no help button.
+     *
+     * @return an array of options to add to the add/edit external tool or null if no options to add.
+     *
+     */
+
+    public function get_configuration_options() {
+
+        $configurationoptions = array();
+
+        $optionsmem = array();
+        $optionsmem[0] = get_string('notallow', 'ltiservice_memberships');
+        $optionsmem[1] = get_string('allow', 'ltiservice_memberships');
+
+        $optionssimple = array();
+        $optionssimple[0] = get_string('notallowsimple', 'ltiservice_memberships');
+        $optionssimple[1] = get_string('allowsimple', 'ltiservice_memberships');
+
+        $membership = array();
+        $membership[0] = 'select';
+        $parametersmem = array();
+        $parametersmem[0] = 'ltiservice_memberships';
+        $parametersmem[1] = get_string('membership_management', 'ltiservice_memberships') . ':';
+        $parametersmem[2] = $optionsmem;
+        $membership[1] = $parametersmem;
+        $membership[2] = 'int';
+        $membership[3] = '0';
+        $membership[4] = 'membership_management';
+        $membership[5] = 'ltiservice_memberships';
+
+        $capabilityuserid = array();
+        $capabilityuserid[0] = 'select';
+        $parametersuserid = array();
+        $parametersuserid[0] = 'ltiservice_membershipcapabilityuserid';
+        $parametersuserid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_user_id', 'ltiservice_memberships') . '</i>';
+        $parametersuserid[2] = $optionssimple;
+        $capabilityuserid[1] = $parametersuserid;
+        $capabilityuserid[2] = 'int';
+        $capabilityuserid[3] = '1';
+        $capabilityuserid[4] = 'membership_capability_user_id';
+        $capabilityuserid[5] = 'ltiservice_memberships';
+
+        $capabilitypersonsourcedid = array();
+        $capabilitypersonsourcedid[0] = 'select';
+        $parameterspersonsourcedid = array();
+        $parameterspersonsourcedid[0] = 'ltiservice_membershipcapabilitypersonsourcedid';
+        $parameterspersonsourcedid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_person_sourced_id', 'ltiservice_memberships') . '</i>';
+        $parameterspersonsourcedid[2] = $optionssimple;
+        $capabilitypersonsourcedid[1] = $parameterspersonsourcedid;
+        $capabilitypersonsourcedid[2] = 'int';
+        $capabilitypersonsourcedid[3] = '0';
+        $capabilitypersonsourcedid[4] = 'membership_capability_person_sourced_id';
+        $capabilitypersonsourcedid[5] = 'ltiservice_memberships';
+
+        $capabilitypersonnamefull = array();
+        $capabilitypersonnamefull[0] = 'select';
+        $parameterspersonnamefull = array();
+        $parameterspersonnamefull[0] = 'ltiservice_membershipcapabilitypersonnamefull';
+        $parameterspersonnamefull[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_person_name_full', 'ltiservice_memberships') . '</i>';
+        $parameterspersonnamefull[2] = $optionssimple;
+        $capabilitypersonnamefull[1] = $parameterspersonnamefull;
+        $capabilitypersonnamefull[2] = 'int';
+        $capabilitypersonnamefull[3] = '1';
+        $capabilitypersonnamefull[4] = 'membership_capability_person_name_full';
+        $capabilitypersonnamefull[5] = 'ltiservice_memberships';
+
+        $capabilitypersonnamegiven = array();
+        $capabilitypersonnamegiven[0] = 'select';
+        $parameterspersonnamegiven = array();
+        $parameterspersonnamegiven[0] = 'ltiservice_membershipcapabilitypersonnamegiven';
+        $parameterspersonnamegiven[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_person_name_given', 'ltiservice_memberships') . '</i>';
+        $parameterspersonnamegiven[2] = $optionssimple;
+        $capabilitypersonnamegiven[1] = $parameterspersonnamegiven;
+        $capabilitypersonnamegiven[2] = 'int';
+        $capabilitypersonnamegiven[3] = '0';
+        $capabilitypersonnamegiven[4] = 'membership_capability_person_name_given';
+        $capabilitypersonnamegiven[5] = 'ltiservice_memberships';
+
+        $capabilitypersonnamefamily = array();
+        $capabilitypersonnamefamily[0] = 'select';
+        $parameterspersonnamefamily = array();
+        $parameterspersonnamefamily[0] = 'ltiservice_membershipcapabilitypersonnamefamily';
+        $parameterspersonnamefamily[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_person_name_family', 'ltiservice_memberships') . '</i>';
+        $parameterspersonnamefamily[2] = $optionssimple;
+        $capabilitypersonnamefamily[1] = $parameterspersonnamefamily;
+        $capabilitypersonnamefamily[2] = 'int';
+        $capabilitypersonnamefamily[3] = '0';
+        $capabilitypersonnamefamily[4] = 'membership_capability_person_name_family';
+        $capabilitypersonnamefamily[5] = 'ltiservice_memberships';
+
+        $capabilitypersonemailprimary = array();
+        $capabilitypersonemailprimary[0] = 'select';
+        $parameterspersonemailprimary = array();
+        $parameterspersonemailprimary[0] = 'ltiservice_membershipcapabilitypersonemailprimary';
+        $parameterspersonemailprimary[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_person_email_primary', 'ltiservice_memberships') . '</i>';
+        $parameterspersonemailprimary[2] = $optionssimple;
+        $capabilitypersonemailprimary[1] = $parameterspersonemailprimary;
+        $capabilitypersonemailprimary[2] = 'int';
+        $capabilitypersonemailprimary[3] = '0';
+        $capabilitypersonemailprimary[4] = 'membership_capability_person_email_primary';
+        $capabilitypersonemailprimary[5] = 'ltiservice_memberships';
+
+        $capabilityresultsourcedid = array();
+        $capabilityresultsourcedid[0] = 'select';
+        $parametersresultsourcedid = array();
+        $parametersresultsourcedid[0] = 'ltiservice_membershipcapabilityresultsourcedid';
+        $parametersresultsourcedid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
+        get_string('membership_capability_result_sourced_id', 'ltiservice_memberships') . '</i>';
+        $parametersresultsourcedid[2] = $optionssimple;
+        $capabilityresultsourcedid[1] = $parametersresultsourcedid;
+        $capabilityresultsourcedid[2] = 'int';
+        $capabilityresultsourcedid[3] = '0';
+        $capabilityresultsourcedid[4] = 'membership_capability_result_sourced_id';
+        $capabilityresultsourcedid[5] = 'ltiservice_memberships';
+
+        $configurationoptions[0] = $membership;
+        $configurationoptions[1] = $capabilityuserid;
+        $configurationoptions[2] = $capabilitypersonsourcedid;
+        $configurationoptions[3] = $capabilitypersonnamefull;
+        $configurationoptions[4] = $capabilitypersonnamegiven;
+        $configurationoptions[5] = $capabilitypersonnamefamily;
+        $configurationoptions[6] = $capabilitypersonemailprimary;
+        $configurationoptions[7] = $capabilityresultsourcedid;
+
+        return $configurationoptions;
+    }
+
+    /**
+     * Return an array with the names of the parameters that the service will be saving in the configuration
+     *
+     * @return  an array with the names of the parameters that the service will be saving in the configuration
+     *
+     */
+    public function get_configuration_parameter_names() {
+        return array('ltiservice_memberships', 'ltiservice_membershipcapabilityuserid',
+                'ltiservice_membershipcapabilitypersonsourcedid', 'ltiservice_membershipcapabilitypersonnamefull',
+                'ltiservice_membershipcapabilitypersonnamegiven', 'ltiservice_membershipcapabilitypersonnamefamily',
+                'ltiservice_membershipcapabilitypersonemailprimary', 'ltiservice_membershipcapabilityresultsourcedid');
+    }
+
+    /**
+     * Return an array of key/values to add to the launch parameters.
+     *
+     * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
+     * @param $course. the course id.
+     * @param $userid. The user id.
+     * @param $typeid. The tool lti type id.
+     * @param $modlti. The id of the lti activity.
+     *
+     * The type is passed to check the configuration
+     * and not return parameters for services not used.
+     *
+     * @return an array of key/value pairs to add as launch parameters.
+     */
+    public function get_launch_parameters($messagetype, $course, $user, $typeid, $modlti = null) {
+        global $DB, $COURSE;
+
+        $launchparameters = array();
+        if (is_used_in_context($typeid, $course)) {
+            $tool = lti_get_type_type_config($typeid);
+            $endpoint = $this->resources[0]->get_endpoint();
+            if ($COURSE->id === SITEID) {
+                $contexttype = 'Group';
+            } else {
+                $contexttype = 'CourseSection';
+            }
+            if ($tool->memberships == '1') {
+                $launchparameters['custom_context_memberships_url'] = $endpoint .
+                "/{$contexttype}/{$course}/bindings/{$typeid}/memberships";
+            }
+        }
+        return $launchparameters;
     }
 
 }

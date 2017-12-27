@@ -25,3 +25,24 @@
 
 $string['pluginname'] = 'Memberships LTI Service';
 $string['servicename'] = 'Memberships';
+$string['membership_management'] = 'Membership';
+$string['membership_management_help'] = 'Allow the tool to retrieve member\'s info from the course.
+ The options below will allow or not the tool to get different data from the users.';
+$string['notallow'] = 'Not Allowed';
+$string['allow'] = 'Can retrieve member\'s info';
+$string['notallowsimple'] = 'Not Allowed';
+$string['allowsimple'] = 'Allowed';
+$string['membership_capability_user_id'] = "User Id";
+$string['membership_capability_user_id_help'] = 'Tool will be able to get the User Id';
+$string['membership_capability_person_sourced_id'] = 'Source Id';
+$string['membership_capability_person_sourced_id_help'] = 'This field contains the LIS identifier for the user account that is performing this launch';
+$string['membership_capability_person_name_full'] = 'Full Name';
+$string['membership_capability_person_name_full_help'] = 'Tool will be able to get the Full name';
+$string['membership_capability_person_name_given'] = 'Given Name';
+$string['membership_capability_person_name_given_help'] = 'Tool will be able to get the Given Name help';
+$string['membership_capability_person_name_family'] = 'Family Name';
+$string['membership_capability_person_name_family_help'] = 'Tool will be able to get the Family Name help';
+$string['membership_capability_person_email_primary'] = 'Primary email';
+$string['membership_capability_person_email_primary_help'] = 'Tool will be able to get the Primary email help';
+$string['membership_capability_result_sourced_id'] = 'Result Sourced Id';
+$string['membership_capability_result_sourced_id_help'] = 'Returns an identifier that indicates the LIS Result Identifier (if any) associated with this launch';
