@@ -166,39 +166,68 @@ EOD;
             if ($include) {
                 $member = new \stdClass();
                 $toolconfig = lti_get_type_type_config($tool->id);
+                if (is_null($lti)) {
+                    $instanceconfig = new \stdClass();
+                } else {
+                    $instanceconfig = lti_get_type_config_from_instance($lti->id);
+                }
                 if (in_array('User.id', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilityuserid)
-                                && $toolconfig->ltiservice_membershipcapabilityuserid == 1)) {
+                        || ($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)) {
                     $member->userId = $user->id;
                 }
                 if (in_array('Person.sourcedId', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonsourcedid)
-                                && $toolconfig->ltiservice_membershipcapabilitypersonsourcedid == 1)) {
+                        || ($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)) {
                     $member->sourcedId = format_string($user->idnumber);
                 }
                 if (in_array('Person.name.full', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamefull)
-                                && $toolconfig->ltiservice_membershipcapabilitypersonnamefull == 1)) {
+                        || (($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)
+                                && ((isset($toolconfig->lti_sendname)
+                                        && $toolconfig->lti_sendname == 1)
+                                        || (isset($toolconfig->lti_sendname)
+                                                && $toolconfig->lti_sendname == 2)
+                                        && isset($instanceconfig->lti_sendname)
+                                        && $instanceconfig->lti_sendname == 1))) {
                     $member->name = format_string("{$user->firstname} {$user->lastname}");
                 }
                 if (in_array('Person.name.given', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamegiven)
-                                && $toolconfig->ltiservice_membershipcapabilitypersonnamegiven == 1)) {
+                        || (($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)
+                                && ((isset($toolconfig->lti_sendname)
+                                        && $toolconfig->lti_sendname == 1)
+                                        || (isset($toolconfig->lti_sendname)
+                                                && $toolconfig->lti_sendname == 2)
+                                        && isset($instanceconfig->lti_sendname)
+                                        && $instanceconfig->lti_sendname == 1))) {
                     $member->givenName = format_string($user->firstname);
                 }
                 if (in_array('Person.name.family', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonnamefamily)
-                                && $toolconfig->ltiservice_membershipcapabilitypersonnamefamily == 1)) {
+                        || (($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)
+                                && ((isset($toolconfig->lti_sendname)
+                                        && $toolconfig->lti_sendname == 1)
+                                        || (isset($toolconfig->lti_sendname)
+                                                && $toolconfig->lti_sendname == 2)
+                                        && isset($instanceconfig->lti_sendname)
+                                        && $instanceconfig->lti_sendname == 1))) {
                     $member->familyName = format_string($user->lastname);
                 }
                 if (in_array('Person.email.primary', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilitypersonemailprimary)
-                                && $toolconfig->ltiservice_membershipcapabilitypersonemailprimary == 1)) {
+                        || (($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1)
+                                && ((isset($toolconfig->lti_sendemailaddr)
+                                        && $toolconfig->lti_sendemailaddr == 1)
+                                        || (isset($toolconfig->lti_sendemailaddr)
+                                                && $toolconfig->lti_sendemailaddr == 2)
+                                        && isset($instanceconfig->lti_sendemailaddr)
+                                        && $instanceconfig->lti_sendemailaddr == 1))) {
                     $member->email = format_string($user->email);
                 }
                 if ((in_array('Result.sourcedId', $enabledcapabilities)
-                        || (isset($toolconfig->ltiservice_membershipcapabilityresultsourcedid)
-                                && $toolconfig->ltiservice_membershipcapabilityresultsourcedid == 1))
+                        || ($tool->toolproxyid == 0 && isset($toolconfig->ltiservice_memberships)
+                                && $toolconfig->ltiservice_memberships == 1))
                         && !empty($lti) && !empty($lti->servicesalt)) {
                     $member->resultSourcedId = json_encode(lti_build_sourcedid($lti->id, $user->id, $lti->servicesalt,
                                                            $lti->typeid));
@@ -266,10 +295,6 @@ EOD;
         $optionsmem[0] = get_string('notallow', 'ltiservice_memberships');
         $optionsmem[1] = get_string('allow', 'ltiservice_memberships');
 
-        $optionssimple = array();
-        $optionssimple[0] = get_string('notallowsimple', 'ltiservice_memberships');
-        $optionssimple[1] = get_string('allowsimple', 'ltiservice_memberships');
-
         $membership = array();
         $membership[0] = 'select';
         $parametersmem = array();
@@ -282,105 +307,7 @@ EOD;
         $membership[4] = 'membership_management';
         $membership[5] = 'ltiservice_memberships';
 
-        $capabilityuserid = array();
-        $capabilityuserid[0] = 'select';
-        $parametersuserid = array();
-        $parametersuserid[0] = 'ltiservice_membershipcapabilityuserid';
-        $parametersuserid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_user_id', 'ltiservice_memberships') . '</i>';
-        $parametersuserid[2] = $optionssimple;
-        $capabilityuserid[1] = $parametersuserid;
-        $capabilityuserid[2] = 'int';
-        $capabilityuserid[3] = '1';
-        $capabilityuserid[4] = 'membership_capability_user_id';
-        $capabilityuserid[5] = 'ltiservice_memberships';
-
-        $capabilitypersonsourcedid = array();
-        $capabilitypersonsourcedid[0] = 'select';
-        $parameterspersonsourcedid = array();
-        $parameterspersonsourcedid[0] = 'ltiservice_membershipcapabilitypersonsourcedid';
-        $parameterspersonsourcedid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_person_sourced_id', 'ltiservice_memberships') . '</i>';
-        $parameterspersonsourcedid[2] = $optionssimple;
-        $capabilitypersonsourcedid[1] = $parameterspersonsourcedid;
-        $capabilitypersonsourcedid[2] = 'int';
-        $capabilitypersonsourcedid[3] = '0';
-        $capabilitypersonsourcedid[4] = 'membership_capability_person_sourced_id';
-        $capabilitypersonsourcedid[5] = 'ltiservice_memberships';
-
-        $capabilitypersonnamefull = array();
-        $capabilitypersonnamefull[0] = 'select';
-        $parameterspersonnamefull = array();
-        $parameterspersonnamefull[0] = 'ltiservice_membershipcapabilitypersonnamefull';
-        $parameterspersonnamefull[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_person_name_full', 'ltiservice_memberships') . '</i>';
-        $parameterspersonnamefull[2] = $optionssimple;
-        $capabilitypersonnamefull[1] = $parameterspersonnamefull;
-        $capabilitypersonnamefull[2] = 'int';
-        $capabilitypersonnamefull[3] = '1';
-        $capabilitypersonnamefull[4] = 'membership_capability_person_name_full';
-        $capabilitypersonnamefull[5] = 'ltiservice_memberships';
-
-        $capabilitypersonnamegiven = array();
-        $capabilitypersonnamegiven[0] = 'select';
-        $parameterspersonnamegiven = array();
-        $parameterspersonnamegiven[0] = 'ltiservice_membershipcapabilitypersonnamegiven';
-        $parameterspersonnamegiven[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_person_name_given', 'ltiservice_memberships') . '</i>';
-        $parameterspersonnamegiven[2] = $optionssimple;
-        $capabilitypersonnamegiven[1] = $parameterspersonnamegiven;
-        $capabilitypersonnamegiven[2] = 'int';
-        $capabilitypersonnamegiven[3] = '0';
-        $capabilitypersonnamegiven[4] = 'membership_capability_person_name_given';
-        $capabilitypersonnamegiven[5] = 'ltiservice_memberships';
-
-        $capabilitypersonnamefamily = array();
-        $capabilitypersonnamefamily[0] = 'select';
-        $parameterspersonnamefamily = array();
-        $parameterspersonnamefamily[0] = 'ltiservice_membershipcapabilitypersonnamefamily';
-        $parameterspersonnamefamily[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_person_name_family', 'ltiservice_memberships') . '</i>';
-        $parameterspersonnamefamily[2] = $optionssimple;
-        $capabilitypersonnamefamily[1] = $parameterspersonnamefamily;
-        $capabilitypersonnamefamily[2] = 'int';
-        $capabilitypersonnamefamily[3] = '0';
-        $capabilitypersonnamefamily[4] = 'membership_capability_person_name_family';
-        $capabilitypersonnamefamily[5] = 'ltiservice_memberships';
-
-        $capabilitypersonemailprimary = array();
-        $capabilitypersonemailprimary[0] = 'select';
-        $parameterspersonemailprimary = array();
-        $parameterspersonemailprimary[0] = 'ltiservice_membershipcapabilitypersonemailprimary';
-        $parameterspersonemailprimary[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_person_email_primary', 'ltiservice_memberships') . '</i>';
-        $parameterspersonemailprimary[2] = $optionssimple;
-        $capabilitypersonemailprimary[1] = $parameterspersonemailprimary;
-        $capabilitypersonemailprimary[2] = 'int';
-        $capabilitypersonemailprimary[3] = '0';
-        $capabilitypersonemailprimary[4] = 'membership_capability_person_email_primary';
-        $capabilitypersonemailprimary[5] = 'ltiservice_memberships';
-
-        $capabilityresultsourcedid = array();
-        $capabilityresultsourcedid[0] = 'select';
-        $parametersresultsourcedid = array();
-        $parametersresultsourcedid[0] = 'ltiservice_membershipcapabilityresultsourcedid';
-        $parametersresultsourcedid[1] = '&nbsp;&nbsp;&nbsp;&nbsp;<i>' .
-        get_string('membership_capability_result_sourced_id', 'ltiservice_memberships') . '</i>';
-        $parametersresultsourcedid[2] = $optionssimple;
-        $capabilityresultsourcedid[1] = $parametersresultsourcedid;
-        $capabilityresultsourcedid[2] = 'int';
-        $capabilityresultsourcedid[3] = '0';
-        $capabilityresultsourcedid[4] = 'membership_capability_result_sourced_id';
-        $capabilityresultsourcedid[5] = 'ltiservice_memberships';
-
         $configurationoptions[0] = $membership;
-        $configurationoptions[1] = $capabilityuserid;
-        $configurationoptions[2] = $capabilitypersonsourcedid;
-        $configurationoptions[3] = $capabilitypersonnamefull;
-        $configurationoptions[4] = $capabilitypersonnamegiven;
-        $configurationoptions[5] = $capabilitypersonnamefamily;
-        $configurationoptions[6] = $capabilitypersonemailprimary;
-        $configurationoptions[7] = $capabilityresultsourcedid;
 
         return $configurationoptions;
     }
