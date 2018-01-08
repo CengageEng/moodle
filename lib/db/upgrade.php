@@ -1859,5 +1859,81 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2017121200.00);
     }
 
+    if ($oldversion < 2017121900.00) {
+
+        // Define table role_allow_view to be created.
+        $table = new xmldb_table('role_allow_view');
+
+        // Adding fields to table role_allow_view.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('roleid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('allowview', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+        // Adding keys to table role_allow_view.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('roleid', XMLDB_KEY_FOREIGN, array('roleid'), 'role', array('id'));
+        $table->add_key('allowview', XMLDB_KEY_FOREIGN, array('allowview'), 'role', array('id'));
+
+        // Conditionally launch create table for role_allow_view.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $index = new xmldb_index('roleid-allowview', XMLDB_INDEX_UNIQUE, array('roleid', 'allowview'));
+
+        // Conditionally launch add index roleid.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        $roles = $DB->get_records('role', array(), 'sortorder ASC');
+
+        $DB->delete_records('role_allow_view');
+        foreach ($roles as $role) {
+            foreach ($roles as $allowedrole) {
+                $record = new stdClass();
+                $record->roleid      = $role->id;
+                $record->allowview = $allowedrole->id;
+                $DB->insert_record('role_allow_view', $record);
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2017121900.00);
+    }
+
+    if ($oldversion < 2017122200.01) {
+
+        // Define field indexpriority to be added to search_index_requests. Allow null initially.
+        $table = new xmldb_table('search_index_requests');
+        $field = new xmldb_field('indexpriority', XMLDB_TYPE_INTEGER, '10',
+                null, null, null, null, 'partialtime');
+
+        // Conditionally add field.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+
+            // Set existing values to 'normal' value (100).
+            $DB->set_field('search_index_requests', 'indexpriority', 100);
+
+            // Now make the field 'NOT NULL'.
+            $field = new xmldb_field('indexpriority', XMLDB_TYPE_INTEGER, '10',
+                    null, XMLDB_NOTNULL, null, null, 'partialtime');
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        // Define index indexprioritytimerequested (not unique) to be added to search_index_requests.
+        $index = new xmldb_index('indexprioritytimerequested', XMLDB_INDEX_NOTUNIQUE,
+                array('indexpriority', 'timerequested'));
+
+        // Conditionally launch add index indexprioritytimerequested.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2017122200.01);
+    }
+
     return true;
 }

@@ -10046,6 +10046,13 @@ body.path-question-type .mform fieldset.hidden {
 .search-areas-actions > div {
   display: inline-block;
 }
+#core-search-areas .lastcol li {
+  margin-left: 24px;
+  text-indent: -24px;
+}
+#core-search-areas .lastcol li > i {
+  text-indent: 0;
+}
 .popover-region {
   float: right;
   position: relative;
@@ -17888,6 +17895,15 @@ div#dock {
 .userloggedinas .usermenu .userbutton .avatars .avatar img {
   width: inherit;
   height: inherit;
+}
+#page-mod-quiz-edit ul.slots li.section li.activity .instancemaxmarkcontainer form input {
+  margin: 0;
+  padding: 0.2em;
+  height: 1em;
+}
+#mod_quiz_preflight_form .femptylabel .felement {
+  margin: 0;
+  padding: 0;
 }
 .path-mod-quiz #mod_quiz_navblock .qnbutton {
   text-decoration: none;

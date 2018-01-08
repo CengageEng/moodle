@@ -1,7 +1,14 @@
 This files describes API changes in core libraries and APIs,
 information provided here is intended especially for developers.
 
+=== 3.5 ===
+
+* The maximum supported precision (the total number of digits) for XMLDB_TYPE_NUMBER ("number") fields raised from 20 to
+  38 digits. Additionally, the whole number part (precision minus scale) must not be longer than the maximum length of
+  integer fields (20 digits). Note that PHP floats commonly support precision of roughly 15 digits only (MDL-32113).
+
 === 3.4 ===
+
 * oauth2_client::request method has an extra parameter to specify the accept header for the response (MDL-60733)
 * The following functions, previously used (exclusively) by upgrade steps are not available
   anymore because of the upgrade cleanup performed for this version. See MDL-57432 for more info:
@@ -58,6 +65,10 @@ information provided here is intended especially for developers.
 * $CFG->loginhttps is now deprecated, do not use it.
 * $PAGE->https_required and $PAGE->verify_https_required() are now deprecated. They are no longer used and will throw a coding_exception.
 * $CFG->httpswwwroot is now deprecated and will always result in the same value as wwwroot.
+* Added function core_role_set_view_allowed() to check if a user should be able to see a given role.
+  This should be checked whenever displaying a list of roles to a user, however, core_role_set_assign_allowed may need to override it
+  in some cases.
+* Deprecated allow_override, allow_assign and allow_switch and replaced with core_role_set_*_allowed to avoid function names conflicting.
 
 === 3.3.1 ===
 
