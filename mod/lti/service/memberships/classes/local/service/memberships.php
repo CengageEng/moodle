@@ -319,10 +319,7 @@ EOD;
      *
      */
     public function get_configuration_parameter_names() {
-        return array('ltiservice_memberships', 'ltiservice_membershipcapabilityuserid',
-                'ltiservice_membershipcapabilitypersonsourcedid', 'ltiservice_membershipcapabilitypersonnamefull',
-                'ltiservice_membershipcapabilitypersonnamegiven', 'ltiservice_membershipcapabilitypersonnamefamily',
-                'ltiservice_membershipcapabilitypersonemailprimary', 'ltiservice_membershipcapabilityresultsourcedid');
+        return array('ltiservice_memberships');
     }
 
     /**

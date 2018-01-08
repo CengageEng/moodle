@@ -193,11 +193,8 @@ abstract class service_base {
         global $DB;
 
         $ok = false;
-        // First check if it is a course tool.
+        // Check if there is an lti in the course with the typeid.
         if ($DB->get_record('lti', array('course' => $courseid, 'typeid' => $typeid)) != false) {
-            $ok = true;
-            // If not, let's check if it is a global tool.
-        } else if ($DB->get_record('lti', array('course' => '0', 'typeid' => $typeid)) != false) {
             $ok = true;
         }
         return $ok;
