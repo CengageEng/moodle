@@ -143,9 +143,9 @@ class systemsettings extends \mod_lti\local\ltiservice\resource_base {
      * @return string
      */
     public function parse_value($value) {
-
-        $value = str_replace('$ToolProxy.custom.url', parent::get_endpoint(), $value);
-
+        if (strpos($value, '$ToolProxy.custom.url') !== false) {
+            $value = str_replace('$ToolProxy.custom.url', parent::get_endpoint(), $value);
+        }
         return $value;
 
     }

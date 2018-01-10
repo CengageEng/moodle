@@ -195,13 +195,14 @@ class linksettings extends \mod_lti\local\ltiservice\resource_base {
      */
     public function parse_value($value) {
 
-        $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
-        if (!empty($id)) {
-            $cm = get_coursemodule_from_id('lti', $id, 0, false, MUST_EXIST);
-            $this->params['link_id'] = $cm->instance;
+        if (strpos($value, '$LtiLink.custom.url') !== false) {
+            $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
+            if (!empty($id)) {
+                $cm = get_coursemodule_from_id('lti', $id, 0, false, MUST_EXIST);
+                $this->params['link_id'] = $cm->instance;
+            }
+            $value = str_replace('$LtiLink.custom.url', parent::get_endpoint(), $value);
         }
-        $value = str_replace('$LtiLink.custom.url', parent::get_endpoint(), $value);
-
         return $value;
 
     }

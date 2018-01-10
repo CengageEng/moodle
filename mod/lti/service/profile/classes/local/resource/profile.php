@@ -218,9 +218,9 @@ EOD;
      * @return string
      */
     public function parse_value($value) {
-
-        $value = str_replace('$ToolConsumerProfile.url', $this->get_endpoint(), $value);
-
+        if (strpos($value, '$ToolConsumerProfile.url') !== false) {
+            $value = str_replace('$ToolConsumerProfile.url', $this->get_endpoint(), $value);
+        }
         return $value;
 
     }

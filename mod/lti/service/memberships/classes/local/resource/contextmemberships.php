@@ -129,23 +129,24 @@ class contextmemberships extends \mod_lti\local\ltiservice\resource_base {
     public function parse_value($value) {
         global $COURSE, $DB;
 
-        if ($COURSE->id === SITEID) {
-            $this->params['context_type'] = 'Group';
-        } else {
-            $this->params['context_type'] = 'CourseSection';
-        }
-        $this->params['context_id'] = $COURSE->id;
-
-        $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
-        if (!empty($id)) {
-            $cm = get_coursemodule_from_id('lti', $id, 0, false, IGNORE_MISSING);
-            $lti = $DB->get_record('lti', array('id' => $cm->instance), 'typeid', IGNORE_MISSING);
-            if ($lti && !empty($lti->typeid)) {
-                $this->params['tool_code'] = $lti->typeid;
+        if (strpos($value, '$ToolProxyBinding.memberships.url') !== false) {
+            if ($COURSE->id === SITEID) {
+                $this->params['context_type'] = 'Group';
+            } else {
+                $this->params['context_type'] = 'CourseSection';
             }
-        }
-        $value = str_replace('$ToolProxyBinding.memberships.url', parent::get_endpoint(), $value);
+            $this->params['context_id'] = $COURSE->id;
 
+            $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
+            if (!empty($id)) {
+                $cm = get_coursemodule_from_id('lti', $id, 0, false, IGNORE_MISSING);
+                $lti = $DB->get_record('lti', array('id' => $cm->instance), 'typeid', IGNORE_MISSING);
+                if ($lti && !empty($lti->typeid)) {
+                    $this->params['tool_code'] = $lti->typeid;
+                }
+            }
+            $value = str_replace('$ToolProxyBinding.memberships.url', parent::get_endpoint(), $value);
+        }
         return $value;
 
     }

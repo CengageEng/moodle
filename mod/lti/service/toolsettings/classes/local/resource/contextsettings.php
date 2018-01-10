@@ -166,16 +166,17 @@ class contextsettings extends \mod_lti\local\ltiservice\resource_base {
     public function parse_value($value) {
         global $COURSE;
 
-        if ($COURSE->format == 'site') {
-            $this->params['context_type'] = 'Group';
-        } else {
-            $this->params['context_type'] = 'CourseSection';
+        if (strpos($value, '$ToolProxyBinding.custom.url') !== false) {
+            if ($COURSE->format == 'site') {
+                $this->params['context_type'] = 'Group';
+            } else {
+                $this->params['context_type'] = 'CourseSection';
+            }
+            $this->params['context_id'] = $COURSE->id;
+            $this->params['vendor_code'] = $this->get_service()->get_tool_proxy()->vendorcode;
+            $this->params['product_code'] = $this->get_service()->get_tool_proxy()->guid;
+            $value = str_replace('$ToolProxyBinding.custom.url', parent::get_endpoint(), $value);
         }
-        $this->params['context_id'] = $COURSE->id;
-        $this->params['vendor_code'] = $this->get_service()->get_tool_proxy()->vendorcode;
-        $this->params['product_code'] = $this->get_service()->get_tool_proxy()->guid;
-        $value = str_replace('$ToolProxyBinding.custom.url', parent::get_endpoint(), $value);
-
         return $value;
 
     }
