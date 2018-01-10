@@ -125,7 +125,7 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);
-        if ($tool->ltiservice_memberships == '1') {
+        if ($tool->memberships == '1') {
             return array('ToolProxyBinding.memberships.url:get');
         } else {
             return array();
