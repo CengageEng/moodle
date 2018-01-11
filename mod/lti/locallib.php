@@ -1880,7 +1880,7 @@ function lti_get_type_type_config($id) {
         $type->lti_module_class_type = $config['module_class_type'];
     }
 
-    // Get the parameters from the LTI ADVANTAGE services.
+    // Get the parameters from the LTI services.
     $services = lti_get_services();
     foreach ($services as $service) {
         $configurationparameters = $service->get_configuration_parameter_names();
