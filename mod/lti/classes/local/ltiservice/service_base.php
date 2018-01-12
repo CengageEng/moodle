@@ -182,7 +182,9 @@ abstract class service_base {
     /**
      * Default implementation will check for the
      * existence of at least one mod_lti entry for that tool and context. It may be overridden
-     * if other inferences can be done.
+     * if other inferences can be done. Ideally a Site Tool should be explicitly engaged with
+     * a course, the check on the presence of a link is a proxy to infer a Site Tool engagement
+     * until an explicit Site Tool - Course relationship exists.
      *
      * @param $courseid. The course id.
      * @param $typeid. The tool lti type id.
@@ -193,8 +195,11 @@ abstract class service_base {
         global $DB;
 
         $ok = false;
-        // Check if there is an lti in the course with the typeid.
+        // Ideally there would be an explicit engagement of a Site tool into a Course,
+        // right now relying on the presence of a link.
         if ($DB->get_record('lti', array('course' => $courseid, 'typeid' => $typeid)) != false) {
+            $ok = true;
+        } else if ($DB->get_record('lti_types', array('course' => $courseid, 'id' => $typeid)) != false) {
             $ok = true;
         }
         return $ok;

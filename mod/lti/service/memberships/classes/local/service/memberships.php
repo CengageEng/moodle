@@ -326,7 +326,7 @@ EOD;
      * Return an array of key/values to add to the launch parameters.
      *
      * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
-     * @param $course. the course id.
+     * @param $courseid. the course id.
      * @param $userid. The user id.
      * @param $typeid. The tool lti type id.
      * @param $modlti. The id of the lti activity.
@@ -336,22 +336,21 @@ EOD;
      *
      * @return an array of key/value pairs to add as launch parameters.
      */
-    public function get_launch_parameters($messagetype, $course, $user, $typeid, $modlti = null) {
+    public function get_launch_parameters($messagetype, $courseid, $user, $typeid, $modlti = null) {
         global $DB, $COURSE;
 
         $launchparameters = array();
-        if (is_used_in_context($typeid, $course)) {
-            $tool = lti_get_type_type_config($typeid);
-            $endpoint = $this->resources[0]->get_endpoint();
+        $tool = lti_get_type_type_config($typeid);
+
+        if ($tool->ltiservice_memberships == '1' && $this->is_used_in_context($typeid, $courseid)) {
+            $endpoint = $this->get_service_path();
             if ($COURSE->id === SITEID) {
                 $contexttype = 'Group';
             } else {
                 $contexttype = 'CourseSection';
             }
-            if ($tool->memberships == '1') {
-                $launchparameters['custom_context_memberships_url'] = $endpoint .
-                "/{$contexttype}/{$course}/bindings/{$typeid}/memberships";
-            }
+            $launchparameters['custom_context_memberships_url'] = $endpoint .
+            "/{$contexttype}/{$courseid}/bindings/{$typeid}/memberships";
         }
         return $launchparameters;
     }
