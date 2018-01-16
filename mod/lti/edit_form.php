@@ -160,8 +160,10 @@ class mod_lti_edit_types_form extends moodleform{
         $mform->setAdvanced('lti_secureicon');
         $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
 
-        // Display the lti advantage services.
-        $this->get_lti_advantage_services($mform);
+        if (!$istool) {
+            // Display the lti advantage services.
+            $this->get_lti_advantage_services($mform);
+        }
 
         if (!$istool) {
             // Add privacy preferences fieldset where users choose whether to send their data.
