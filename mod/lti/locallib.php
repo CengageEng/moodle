@@ -1875,6 +1875,10 @@ function lti_get_type_type_config($id) {
         $type->lti_contentitem = $config['contentitem'];
     }
 
+    if (isset($config['toolurl_ContentItemSelectionRequest'])) {
+        $type->lti_toolurl_ContentItemSelectionRequest = $config['toolurl_ContentItemSelectionRequest'];
+    }
+
     if (isset($config['debuglaunch'])) {
         $type->lti_debuglaunch = $config['debuglaunch'];
     }
@@ -1925,6 +1929,11 @@ function lti_prepare_type_for_save($type, $config) {
     if (isset($config->lti_contentitem)) {
         $type->contentitem = !empty($config->lti_contentitem) ? $config->lti_contentitem : 0;
         $config->lti_contentitem = $type->contentitem;
+    }
+    if (isset($config->lti_toolurl_ContentItemSelectionRequest)) {
+        $type->toolurl_ContentItemSelectionRequest = !empty($config->lti_toolurl_ContentItemSelectionRequest)
+                ? $config->lti_toolurl_ContentItemSelectionRequest : "";
+        $config->lti_toolurl_ContentItemSelectionRequest = $type->toolurl_ContentItemSelectionRequest;
     }
 
     $type->timemodified = time();

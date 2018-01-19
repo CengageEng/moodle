@@ -147,6 +147,15 @@ class mod_lti_edit_types_form extends moodleform{
             $mform->disabledIf('lti_contentitem', null);
         }
 
+        $mform->addElement('text', 'lti_toolurl_ContentItemSelectionRequest', get_string('toolurl_ContentItemSelectionRequest', 'lti'), array('size' => '64'));
+        $mform->setType('lti_toolurl_ContentItemSelectionRequest', PARAM_URL);
+        $mform->setAdvanced('lti_toolurl_ContentItemSelectionRequest');
+        $mform->addHelpButton('lti_toolurl_ContentItemSelectionRequest', 'toolurl_ContentItemSelectionRequest', 'lti');
+        $mform->disabledIf('lti_toolurl_ContentItemSelectionRequest', 'lti_contentitem', 'notchecked');
+        if ($istool) {
+            $mform->disabledIf('lti_toolurl__ContentItemSelectionRequest', null);
+        }
+
         $mform->addElement('hidden', 'oldicon');
         $mform->setType('oldicon', PARAM_URL);
 
