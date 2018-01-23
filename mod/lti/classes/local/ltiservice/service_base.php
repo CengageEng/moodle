@@ -197,9 +197,9 @@ abstract class service_base {
         $ok = false;
         // Ideally there would be an explicit engagement of a Site tool into a Course,
         // right now relying on the presence of a link.
-        if ($DB->get_record('lti', array('course' => $courseid, 'typeid' => $typeid)) != false) {
+        if (count($DB->get_records('lti', array('course' => $courseid, 'typeid' => $typeid), IGNORE_MULTIPLE))>0) {
             $ok = true;
-        } else if ($DB->get_record('lti_types', array('course' => $courseid, 'id' => $typeid)) != false) {
+        } else if ($DB->get_record('lti_types', array('course' => $courseid, 'id' => $typeid), IGNORE_MULTIPLE) != false) {
             $ok = true;
         }
         return $ok;
