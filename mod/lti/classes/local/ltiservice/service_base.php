@@ -204,6 +204,25 @@ abstract class service_base {
         }
         return $ok;
     }
+    
+    /**
+     * Checks if there is a site tool ir a course tool for this site
+     *
+     * @param $courseid. The course id.
+     * @param $typeid. The tool lti type id.
+     *
+     * @return True if tool is used in context.
+     */
+    public function is_allowed_in_context($typeid, $courseid) {
+        global $DB;
+        $ok = false;
+        // It it is a Course tool for this site or a Site tool,
+        $type = $DB->get_record('lti_types', array('id' => $typeid));
+        if ($type && ($type->course == $courseid || $type->course == 1)) {
+            $ok = true;
+        }
+        return $ok;
+    }
 
     /**
      * Return an array of key/values to add to the launch parameters.
