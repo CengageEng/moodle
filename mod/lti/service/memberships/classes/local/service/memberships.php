@@ -341,16 +341,17 @@ EOD;
 
         $launchparameters = array();
         $tool = lti_get_type_type_config($typeid);
-
-        if ($tool->ltiservice_memberships == '1' && $this->is_used_in_context($typeid, $courseid)) {
-            $endpoint = $this->get_service_path();
-            if ($COURSE->id === SITEID) {
-                $contexttype = 'Group';
-            } else {
-                $contexttype = 'CourseSection';
+        if (isset($tool->ltiservice_memberships)){
+            if ($tool->ltiservice_memberships == '1' && $this->is_used_in_context($typeid, $courseid)) {
+                $endpoint = $this->get_service_path();
+                if ($COURSE->id === SITEID) {
+                    $contexttype = 'Group';
+                } else {
+                    $contexttype = 'CourseSection';
+                }
+                $launchparameters['custom_context_memberships_url'] = $endpoint .
+                "/{$contexttype}/{$courseid}/bindings/{$typeid}/memberships";
             }
-            $launchparameters['custom_context_memberships_url'] = $endpoint .
-            "/{$contexttype}/{$courseid}/bindings/{$typeid}/memberships";
         }
         return $launchparameters;
     }
