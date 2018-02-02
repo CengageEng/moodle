@@ -3245,3 +3245,24 @@ function get_tag($tagname, $xpath, $attribute = null) {
     }
     return null;
 }
+
+/**
+ * Get the next available itemnumber in a gradeitem
+ * @since Moodle 3.5
+ */
+function get_next_itemnumber() {
+    global $DB;
+
+    $sql= 'SELECT MAX(itemnumber) FROM {grade_items}';
+    $itemnumber = $DB->get_field_sql($sql);
+    $max = 9999;
+    if ($itemnumber > $max) {
+        $itemnumber += 1;
+    } else {
+        $itemnumber = $max + 1;
+    }
+
+    return $itemnumber;
+}
+
+
