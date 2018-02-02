@@ -3255,11 +3255,11 @@ function get_next_itemnumber() {
 
     $sql= 'SELECT MAX(itemnumber) FROM {grade_items}';
     $itemnumber = $DB->get_field_sql($sql);
-    $max = 9999;
-    if ($itemnumber > $max) {
+    $min = 9999;
+    if ($itemnumber > $min) {
         $itemnumber += 1;
     } else {
-        $itemnumber = $max + 1;
+        $itemnumber = $min + 1;
     }
 
     return $itemnumber;
