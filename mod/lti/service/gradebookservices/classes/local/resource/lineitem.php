@@ -26,6 +26,7 @@
 namespace ltiservice_gradebookservices\local\resource;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
+use mod_lti\local\ltiservice\resource_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,12 +38,15 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lineitem extends \mod_lti\local\ltiservice\resource_base {
+class lineitem extends resource_base {
+
+    /** @var string Course Id related to line item. */
+    protected $courseid;
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
+     * @param gradebookservices $service Service instance
      */
     public function __construct($service) {
 
@@ -51,16 +55,27 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
         $this->template = '/{context_id}/lineitems/{item_id}/lineitem';
         $this->variables[] = 'LineItem.url';
         $this->formats[] = 'application/vnd.ims.lis.v2.lineitem+json';
-        $this->methods[] = 'GET';
-        $this->methods[] = 'PUT';
-        $this->methods[] = 'DELETE';
+        $this->methods[] = self::HTTP_GET;
+        $this->methods[] = self::HTTP_PUT;
+        $this->methods[] = self::HTTP_DELETE;
+
+    }
+
+    /**
+     * Get the course id.
+     *
+     * @return string
+     */
+    public function get_courseid() {
+
+        return $this->courseid;
 
     }
 
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
         global $CFG, $DB;
@@ -73,13 +88,8 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
         } else {
             $contenttype = $response->get_content_type();
         }
-        $isdelete = $response->get_request_method() === 'DELETE';
         // We will receive typeid when working with LTI 1.x, if not then we are in LTI 2.
-        if (isset($_GET['type_id'])) {
-            $typeid = $_GET['type_id'];
-        } else {
-            $typeid = null;
-        }
+        $typeid = optional_param('type_id', null, PARAM_ALPHANUM);
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
@@ -87,17 +97,17 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
                 }
             } else {
                 switch ($response->get_request_method()) {
-                    case 'GET':
+                    case self::HTTP_GET:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.item:get', $response->get_request_data())) {
                             throw new \Exception(null, 401);
                         }
                         break;
-                    case 'PUT':
+                    case self::HTTP_PUT:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.item:put', $response->get_request_data())) {
                             throw new \Exception(null, 401);
                         }
                         break;
-                    case 'DELETE':
+                    case self::HTTP_DELETE:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.item:delete', $response->get_request_data())) {
                             throw new \Exception(null, 401);
                         }
@@ -109,19 +119,20 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
             if (empty($contextid) || (!empty($contenttype) && !in_array($contenttype, $this->formats))) {
                 throw new \Exception(null, 400);
             }
-            if ($DB->get_record('course', array('id' => $contextid)) === false) {
+            if (!$DB->record_exists('course', array('id' => $contextid))) {
                 throw new \Exception(null, 404);
             }
-            if ($DB->get_record('grade_items', array('id' => $itemid)) === false) {
+            if (!$DB->record_exists('grade_items', array('id' => $itemid))) {
                 throw new \Exception(null, 404);
             }
-            if (($item = $this->get_service()->get_lineitem($contextid, $itemid, $typeid)) === false) {
+            $item = $this->get_service()->get_lineitem($contextid, $itemid, $typeid);
+            if ($item === false) {
                 throw new \Exception(null, 403);
             }
             require_once($CFG->libdir.'/gradelib.php');
             switch ($response->get_request_method()) {
                 case 'GET':
-                    $this->get_request($response, $contextid, $item, $typeid);
+                    $this->get_request($response, $item, $typeid);
                     break;
                 case 'PUT':
                     $json = $this->put_request($response->get_request_data(), $item, $typeid);
@@ -145,11 +156,11 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Process a GET request.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
-     * @param boolean $results   True if results are to be included in the response.
-     * @param string  $item       Grade item instance.
+     * @param \mod_lti\local\ltiservice\response $response Response object for this request.
+     * @param object $item Grade item instance.
+     * @param string $typeid Tool Type Id
      */
-    private function get_request($response, $contextid, $item, $typeid) {
+    private function get_request($response, $item, $typeid) {
 
         $response->set_content_type($this->formats[0]);
         $json = gradebookservices::item_to_json($item, substr(parent::get_endpoint(),
@@ -161,8 +172,12 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Process a PUT request.
      *
-     * @param string $body       PUT body
-     * @param string $olditem    Grade item instance
+     * @param string $body PUT body
+     * @param \ltiservice_gradebookservices\local\resource\lineitem $olditem Grade item instance
+     * @param string $typeid Tool Type Id
+     *
+     * @return string
+     * @throws \Exception
      */
     private function put_request($body, $olditem, $typeid) {
         global $DB;
@@ -253,7 +268,7 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
                     $toolproxyid = null;
                     $baseurl = lti_get_type_type_config($typeid)->lti_toolurl;
                 }
-                $gradebookservicesid = $DB->update_record('ltiservice_gradebookservices', array(
+                $DB->update_record('ltiservice_gradebookservices', (object)array(
                         'id' => $gbs->id,
                         'itemnumber' => $gbs->itemnumber,
                         'courseid' => $gbs->courseid,
@@ -282,7 +297,8 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Process a DELETE request.
      *
-     * @param string $item       Grade item instance
+     * @param \ltiservice_gradebookservices\local\resource\lineitem $item Grade item instance
+     * @throws \Exception
      */
     private function delete_request($item) {
         global $DB;
@@ -303,9 +319,11 @@ class lineitem extends \mod_lti\local\ltiservice\resource_base {
     }
 
     /**
-     * get permissions from the config of the tool for that resource
+     * Get permissions from the config of the tool for that resource
      *
-     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     * @param string $typeid
+     *
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);

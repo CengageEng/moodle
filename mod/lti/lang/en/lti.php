@@ -511,8 +511,8 @@ A base URL of *quiz.tool.com* would match the following:
 If two different tool configurations are for the same domain, the most specific match will be used.
 
 You can also insert a cartridge URL if you have one and the details for the tool will be automatically filled.';
-$string['toolurl_ContentItemSelectionRequest'] = 'Content Selection URL';
-$string['toolurl_ContentItemSelectionRequest_help'] = 'The Content Selection URL will be used to launch the
+$string['toolurl_contentitemselectionrequest'] = 'Content Selection URL';
+$string['toolurl_contentitemselectionrequest_help'] = 'The Content Selection URL will be used to launch the
 content selection page from the tool provider. If it is empty, the Tool URL will be used';
 $string['typename'] = 'Tool name';
 $string['typename_help'] = 'The tool name is used to identify the tool provider within Moodle. The name entered will be visible

@@ -27,6 +27,7 @@
 namespace ltiservice_gradebookservices\local\resource;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
+use mod_lti\local\ltiservice\resource_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class results extends \mod_lti\local\ltiservice\resource_base {
+class results extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
+     * @param \ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
      */
     public function __construct($service) {
 
@@ -58,7 +59,7 @@ class results extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
         global $CFG, $DB;
@@ -73,13 +74,8 @@ class results extends \mod_lti\local\ltiservice\resource_base {
         } else {
             $contenttype = $response->get_content_type();
         }
-        $container = empty($contenttype) || ($contenttype === $this->formats[0]);
         // We will receive typeid when working with LTI 1.x, if not the we are in LTI 2.
-        if (isset($_GET['type_id'])) {
-            $typeid = $_GET['type_id'];
-        } else {
-            $typeid = null;
-        }
+        $typeid = optional_param('type_id', null, PARAM_ALPHANUM);
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
@@ -93,10 +89,10 @@ class results extends \mod_lti\local\ltiservice\resource_base {
             if (empty($contextid) || (!empty($contenttype) && !in_array($contenttype, $this->formats))) {
                 throw new \Exception(null, 400);
             }
-            if ($DB->get_record('course', array('id' => $contextid)) === false) {
+            if ($DB->record_exists('course', array('id' => $contextid))) {
                 throw new \Exception(null, 404);
             }
-            if ($DB->get_record('grade_items', array('id' => $itemid)) === false) {
+            if ($DB->record_exists('grade_items', array('id' => $itemid))) {
                 throw new \Exception(null, 404);
             }
             if (($item = $this->get_service()->get_lineitem($contextid, $itemid, $typeid)) === false) {
@@ -116,14 +112,8 @@ class results extends \mod_lti\local\ltiservice\resource_base {
             require_once($CFG->libdir.'/gradelib.php');
             switch ($response->get_request_method()) {
                 case 'GET':
-                    if (isset($_GET['limit'])) {
-                        gradebookservices::validate_paging_query_parameters($_GET['limit']);
-                    }
                     $useridfilter = optional_param('user_id', 0, PARAM_INT);
                     $limitnum = optional_param('limit', 0, PARAM_INT);
-                    if (isset($_GET['from'])) {
-                        gradebookservices::validate_paging_query_parameters($limitnum, $_GET['from']);
-                    }
                     $limitfrom = optional_param('from', 0, PARAM_INT);
                     $typeid = optional_param('type_id', null, PARAM_TEXT);
                     $json = $this->get_request_json($item->id, $limitfrom, $limitnum,
@@ -146,14 +136,14 @@ class results extends \mod_lti\local\ltiservice\resource_base {
      * Generate the JSON for a GET request.
      *
      * @param int    $itemid     Grade item instance ID
-     * @param string $limitfrom  Offset for the first result to include in this paged set
-     * @param string $limitnum   Maximum number of results to include in the response, ignored if zero
+     * @param int $limitfrom  Offset for the first result to include in this paged set
+     * @param int $limitnum   Maximum number of results to include in the response, ignored if zero
      * @param int    $useridfilter     The user id to filter the results.
      * @param int    $typeid     Lti tool typeid (or null)
-     * @param string $response   The response element needed to add a header.
+     * @param \mod_lti\local\ltiservice\response $response   The response element needed to add a header.
      * @param string $contextid  The course to check if the user in useridfilter is allowed in the site
      *
-     * return string
+     * @return string
      */
     private function get_request_json($itemid, $limitfrom, $limitnum, $useridfilter, $typeid, $response, $contextid) {
 
@@ -163,6 +153,10 @@ class results extends \mod_lti\local\ltiservice\resource_base {
             $grades = \grade_grade::fetch_all(array('itemid' => $itemid));
         }
 
+        $firstpage = '';
+        $nextpage = '';
+        $prevpage = '';
+        $lastpage = '';
         if ($grades && isset($limitnum) && $limitnum > 0) {
             // Since we only display grades that have been modified, we need to filter first in order to support
             // paging.
@@ -191,29 +185,21 @@ class results extends \mod_lti\local\ltiservice\resource_base {
             if (is_null($typeid)) {
                 if (($limitfrom <= $totalcount - 1) && (!$outofrange)) {
                     $nextpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitfrom;
-                } else {
-                    $nextpage = null;
                 }
                 $firstpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=0";
                 $canonicalpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitcurrent;
                 $lastpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitlast;
                 if (($limitcurrent > 0) && (!$outofrange)) {
                     $prevpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitprev;
-                } else {
-                    $prevpage = null;
                 }
             } else {
                 if (($limitfrom <= $totalcount - 1) && (!$outofrange)) {
                     $nextpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitfrom;
-                } else {
-                    $nextpage = null;
                 }
                 $firstpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=0";
                 $canonicalpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitcurrent;
                 if (($limitcurrent > 0) && (!$outofrange)) {
                     $prevpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitprev;
-                } else {
-                    $prevpage = null;
                 }
             }
         }
@@ -254,7 +240,9 @@ EOD;
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     * @param string $typeid
+     *
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);

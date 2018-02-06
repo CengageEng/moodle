@@ -26,7 +26,7 @@
 
 namespace ltiservice_memberships\local\resource;
 
-use \mod_lti\local\ltiservice\service_base;
+use mod_lti\local\ltiservice\resource_base;
 use ltiservice_memberships\local\service\memberships;
 
 defined('MOODLE_INTERNAL') || die();
@@ -39,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2015 Vital Source Technologies http://vitalsource.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class contextmemberships extends \mod_lti\local\ltiservice\resource_base {
+class contextmemberships extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_memberships\local\service\memberships $service Service instance
+     * @param \ltiservice_memberships\local\service\memberships $service Service instance
      */
     public function __construct($service) {
 
@@ -60,10 +60,10 @@ class contextmemberships extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
-        global $CFG, $DB;
+        global $DB;
 
         $params = $this->parse_template();
         $role = optional_param('role', '', PARAM_TEXT);
@@ -108,7 +108,8 @@ class contextmemberships extends \mod_lti\local\ltiservice\resource_base {
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     * @param string $typeid
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);

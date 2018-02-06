@@ -49,10 +49,22 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+global $CFG;
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 
-class mod_lti_edit_types_form extends moodleform{
+/**
+ * LTI Edit Form
+ *
+ * @package    mod_lti
+ * @copyright  2017 Cengage Learning http://www.cengage.com
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class mod_lti_edit_types_form extends moodleform {
+
+    /**
+     * Define this form - called from the parent constructor
+     */
     public function definition() {
         global $CFG;
 
@@ -147,7 +159,8 @@ class mod_lti_edit_types_form extends moodleform{
             $mform->disabledIf('lti_contentitem', null);
         }
 
-        $mform->addElement('text', 'lti_toolurl_ContentItemSelectionRequest', get_string('toolurl_ContentItemSelectionRequest', 'lti'), array('size' => '64'));
+        $mform->addElement('text', 'lti_toolurl_ContentItemSelectionRequest',
+            get_string('toolurl_contentitemselectionrequest', 'lti'), array('size' => '64'));
         $mform->setType('lti_toolurl_ContentItemSelectionRequest', PARAM_URL);
         $mform->setAdvanced('lti_toolurl_ContentItemSelectionRequest');
         $mform->addHelpButton('lti_toolurl_ContentItemSelectionRequest', 'toolurl_ContentItemSelectionRequest', 'lti');
@@ -271,11 +284,12 @@ class mod_lti_edit_types_form extends moodleform{
     /**
      * Generates the lti advantage extra configuration adding it to the mform
      *
-     * @return $mform?
+     * @param MoodleQuickForm $mform
      */
     public function get_lti_advantage_services(&$mform) {
         // For each service add the label and get the array of configuration.
         $services = lti_get_services();
+        $supportedoptions = array('select', 'text', 'checkbox');
         $displayheader = true;
         foreach ($services as $service) {
             $configurationoptions = $service->get_configuration_options();
@@ -285,49 +299,19 @@ class mod_lti_edit_types_form extends moodleform{
                     $displayheader = false;
                 }
                 foreach ($configurationoptions as $configurationoption) {
-                    switch ($configurationoption[0]){
-                        case 'select':
-                            $mform->addElement('select',
-                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
-                            if (!is_null($configurationoption[2])) {
-                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
-                            }
-                            if (!is_null($configurationoption[3])) {
-                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
-                            }
-                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
-                                $mform->addHelpButton($configurationoption[1][0],
-                                        $configurationoption[4],  $configurationoption[5]);
-                            }
-                            break;
-                        case 'text':
-                            $mform->addElement('text',
-                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
-                            if (!is_null($configurationoption[2])) {
-                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
-                            }
-                            if (!is_null($configurationoption[3])) {
-                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
-                            }
-                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
-                                $mform->addHelpButton($configurationoption[1][0],
-                                        $configurationoption[4],  $configurationoption[5]);
-                            }
-                            break;
-                        case 'checkbox':
-                            $mform->addElement('checkbox',
-                                    $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
-                            if (!is_null($configurationoption[2])) {
-                                $mform->setType($configurationoption[1][0], $configurationoption[2]);
-                            }
-                            if (!is_null($configurationoption[3])) {
-                                $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
-                            }
-                            if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
-                                $mform->addHelpButton($configurationoption[1][0],
-                                        $configurationoption[4],  $configurationoption[5]);
-                            }
-                            break;
+                    if (in_array($configurationoption[0], $supportedoptions)) {
+                        $mform->addElement($configurationoption[0],
+                            $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
+                        if (!is_null($configurationoption[2])) {
+                            $mform->setType($configurationoption[1][0], $configurationoption[2]);
+                        }
+                        if (!is_null($configurationoption[3])) {
+                            $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
+                        }
+                        if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
+                            $mform->addHelpButton($configurationoption[1][0],
+                                $configurationoption[4],  $configurationoption[5]);
+                        }
                     }
                 }
             }

@@ -26,9 +26,8 @@
 
 namespace ltiservice_toolsettings\local\resource;
 
-use ltiservice_toolsettings\local\resource\systemsettings;
-use ltiservice_toolsettings\local\resource\contextsettings;
 use ltiservice_toolsettings\local\service\toolsettings;
+use mod_lti\local\ltiservice\resource_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2014 Vital Source Technologies http://vitalsource.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class linksettings extends \mod_lti\local\ltiservice\resource_base {
+class linksettings extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_toolsettings\local\resource\linksettings $service Service instance
+     * @param \mod_lti\local\ltiservice\service_base $service Service instance
      */
     public function __construct($service) {
 
@@ -63,7 +62,7 @@ class linksettings extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
         global $DB, $COURSE;
@@ -82,6 +81,7 @@ class linksettings extends \mod_lti\local\ltiservice\resource_base {
 
         $systemsetting = null;
         $contextsetting = null;
+        $lti = null;
         if ($ok) {
             $ok = !empty($linkid);
             if ($ok) {
