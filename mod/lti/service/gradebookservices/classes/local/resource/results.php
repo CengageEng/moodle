@@ -89,10 +89,10 @@ class results extends resource_base {
             if (empty($contextid) || (!empty($contenttype) && !in_array($contenttype, $this->formats))) {
                 throw new \Exception(null, 400);
             }
-            if ($DB->record_exists('course', array('id' => $contextid))) {
+            if (!$DB->record_exists('course', array('id' => $contextid))) {
                 throw new \Exception(null, 404);
             }
-            if ($DB->record_exists('grade_items', array('id' => $itemid))) {
+            if (!$DB->record_exists('grade_items', array('id' => $itemid))) {
                 throw new \Exception(null, 404);
             }
             if (($item = $this->get_service()->get_lineitem($contextid, $itemid, $typeid)) === false) {

@@ -198,9 +198,8 @@ abstract class service_base {
 
         // Ideally there would be an explicit engagement of a Site tool into a Course,
         // right now relying on the presence of a link.
-        $conditions = array('course' => $courseid, 'typeid' => $typeid);
-        $ok = $DB->record_exists('lti', $conditions);
-        return ($ok || $DB->record_exists('lti_types', $conditions));
+        $ok = $DB->record_exists('lti', array('course' => $courseid, 'typeid' => $typeid));
+        return ($ok || $DB->record_exists('lti_types', array('course' => $courseid, 'id' => $typeid)));
     }
 
     /**
@@ -324,7 +323,7 @@ abstract class service_base {
         $consumerkey = lti\get_oauth_key_from_headers();
         if (empty($typeid)) {
             return $ok;
-        } else if ($this->is_used_in_context($typeid, $courseid)) {
+        } else if ($this->is_allowed_in_context($typeid, $courseid)) {
             $tool = lti_get_type_type_config($typeid);
             if ($tool !== false) {
                 if (!$this->is_unsigned() && ($tool->lti_resourcekey == $consumerkey)) {

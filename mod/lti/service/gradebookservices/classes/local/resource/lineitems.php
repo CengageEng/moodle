@@ -103,7 +103,7 @@ class lineitems extends resource_base {
                 (!empty($contenttype) && !in_array($contenttype, $this->formats))) {
                 throw new \Exception(null, 400);
             }
-            if ($DB->record_exists('course', array('id' => $contextid))) {
+            if (!$DB->record_exists('course', array('id' => $contextid))) {
                 $response->set_reason("Not Found: Course ". $contextid." doesn't exist.");
                 throw new \Exception(null, 404);
             }
@@ -305,7 +305,7 @@ EOD;
         $params['gradetype'] = GRADE_TYPE_VALUE;
         $params['grademax']  = $max;
         $params['grademin']  = 0;
-        $item = (object)(array)new \grade_item(array('id' => 0, 'courseid' => $contextid));
+        $item = new \grade_item(array('id' => 0, 'courseid' => $contextid));
         \grade_item::set_properties($item, $params);
         $item->itemtype = 'mod';
         $item->itemmodule = 'lti';

@@ -57,7 +57,6 @@ require_once($CFG->dirroot.'/mod/lti/locallib.php');
  * LTI Edit Form
  *
  * @package    mod_lti
- * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_lti_edit_types_form extends moodleform {
