@@ -24,11 +24,12 @@
  */
 namespace ltiservice_gradebookservices\task;
 
+use core\task\scheduled_task;
 use ltiservice_gradebookservices\local\service\gradebookservices;
 
 defined('MOODLE_INTERNAL') || die();
 
-class cleanup_task extends \core\task\scheduled_task {
+class cleanup_task extends scheduled_task {
 
     /**
      * Get a descriptive name for this task (shown to admins).

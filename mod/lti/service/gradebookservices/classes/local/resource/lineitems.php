@@ -27,6 +27,7 @@
 namespace ltiservice_gradebookservices\local\resource;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
+use mod_lti\local\ltiservice\resource_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lineitems extends \mod_lti\local\ltiservice\resource_base {
+class lineitems extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
+     * @param \ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
      */
     public function __construct($service) {
 
@@ -53,22 +54,22 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
         $this->variables[] = 'LineItems.url';
         $this->formats[] = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
         $this->formats[] = 'application/vnd.ims.lis.v2.lineitem+json';
-        $this->methods[] = 'GET';
-        $this->methods[] = 'POST';
+        $this->methods[] = self::HTTP_GET;
+        $this->methods[] = self::HTTP_POST;
 
     }
 
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
         global $DB;
 
         $params = $this->parse_template();
         $contextid = $params['context_id'];
-        $isget = $response->get_request_method() === 'GET';
+        $isget = $response->get_request_method() === self::HTTP_GET;
         if ($isget) {
             $contenttype = $response->get_accept();
         } else {
@@ -76,11 +77,7 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
         }
         $container = empty($contenttype) || ($contenttype === $this->formats[0]);
         // We will receive typeid when working with LTI 1.x, if not the we are in LTI 2.
-        if (isset($_GET['type_id'])) {
-            $typeid = $_GET['type_id'];
-        } else {
-            $typeid = null;
-        }
+        $typeid = optional_param('type_id', null, PARAM_ALPHANUM);
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
@@ -88,12 +85,12 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
                 }
             } else {
                 switch ($response->get_request_method()) {
-                    case 'GET':
+                    case self::HTTP_GET:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.collection:get', $response->get_request_data())) {
                             throw new \Exception(null, 401);
                         }
                         break;
-                    case 'POST':
+                    case self::HTTP_POST:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.collection:post', $response->get_request_data())) {
                             throw new \Exception(null, 401);
                         }
@@ -102,36 +99,30 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
                         throw new \Exception(null, 405);
                 }
             }
-            if (empty($contextid) || !($container ^ ($response->get_request_method() === 'POST')) ||
+            if (empty($contextid) || !($container ^ ($response->get_request_method() === self::HTTP_POST)) ||
                 (!empty($contenttype) && !in_array($contenttype, $this->formats))) {
                 throw new \Exception(null, 400);
             }
-            if ($DB->get_record('course', array('id' => $contextid)) === false) {
+            if ($DB->record_exists('course', array('id' => $contextid))) {
                 $response->set_reason("Not Found: Course ". $contextid." doesn't exist.");
                 throw new \Exception(null, 404);
             }
             switch ($response->get_request_method()) {
-                case 'GET':
+                case self::HTTP_GET:
                     $resourceid = optional_param('resource_id', null, PARAM_TEXT);
                     $ltilinkid = optional_param('lti_link_id', null, PARAM_TEXT);
                     $tag = optional_param('tag', null, PARAM_TEXT);
-                    if (isset($_GET['limit'])) {
-                        gradebookservices::validate_paging_query_parameters($_GET['limit']);
-                    }
                     $limitnum = optional_param('limit', 0, PARAM_INT);
-                    if (isset($_GET['from'])) {
-                        gradebookservices::validate_paging_query_parameters($limitnum, $_GET['from']);
-                    }
                     $limitfrom = optional_param('from', 0, PARAM_INT);
                     $itemsandcount = $this->get_service()->get_lineitems($contextid, $resourceid, $ltilinkid, $tag, $limitfrom,
                             $limitnum, $typeid);
                     $items = $itemsandcount[1];
                     $totalcount = $itemsandcount[0];
-                    $json = $this->get_request_json($contextid, $items, $resourceid, $ltilinkid, $tag, $limitfrom,
+                    $json = $this->get_request_json($items, $resourceid, $ltilinkid, $tag, $limitfrom,
                             $limitnum, $totalcount, $typeid, $response);
                     $response->set_content_type($this->formats[0]);
                     break;
-                case 'POST':
+                case self::HTTP_POST:
                     $json = $this->post_request_json($response->get_request_data(), $contextid, $typeid);
                     $response->set_code(201);
                     $response->set_content_type($this->formats[1]);
@@ -150,20 +141,25 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Generate the JSON for a GET request.
      *
-     * @param string $contextid      Course ID
-     * @param array  $items          Array of lineitems
-     * @param string $resourceid     Resource identifier used for filtering, may be null
-     * @param string $ltilinkid      Resource Link identifier used for filtering, may be null
-     * @param string $tag            Tag identifier used for filtering, may be null
-     * @param int    $limitfrom      Offset of the first line item to return
-     * @param int    $limitnum       Maximum number of line items to return, ignored if zero or less
-     * @param int    $totalcount     Number of total lineitems before filtering for paging
-     * @param int    $typeid         Maximum number of line items to return, ignored if zero or less
-     * return string
+     * @param array $items Array of lineitems
+     * @param string $resourceid Resource identifier used for filtering, may be null
+     * @param string $ltilinkid Resource Link identifier used for filtering, may be null
+     * @param string $tag Tag identifier used for filtering, may be null
+     * @param int $limitfrom Offset of the first line item to return
+     * @param int $limitnum Maximum number of line items to return, ignored if zero or less
+     * @param int $totalcount Number of total lineitems before filtering for paging
+     * @param int $typeid Maximum number of line items to return, ignored if zero or less
+     * @param \mod_lti\local\ltiservice\response $response
+
+     * @return string
      */
-    private function get_request_json($contextid, $items, $resourceid, $ltilinkid,
+    private function get_request_json($items, $resourceid, $ltilinkid,
             $tag, $limitfrom, $limitnum, $totalcount, $typeid, $response) {
 
+        $firstpage = '';
+        $nextpage = '';
+        $prevpage = '';
+        $lastpage = '';
         if (isset($limitnum) && $limitnum > 0) {
             if ($limitfrom >= $totalcount || $limitfrom < 0) {
                 $outofrange = true;
@@ -177,30 +173,22 @@ class lineitems extends \mod_lti\local\ltiservice\resource_base {
             if (is_null($typeid)) {
                 if (($limitfrom <= $totalcount - 1) && (!$outofrange)) {
                     $nextpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitfrom;
-                } else {
-                    $nextpage = null;
                 }
                 $firstpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=0";
                 $canonicalpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitcurrent;
                 $lastpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitlast;
                 if (($limitcurrent > 0) && (!$outofrange)) {
                     $prevpage = $this->get_endpoint() . "?limit=" . $limitnum . "&from=" . $limitprev;
-                } else {
-                    $prevpage = null;
                 }
             } else {
                 if (($limitfrom <= $totalcount - 1) && (!$outofrange)) {
                     $nextpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitfrom;
-                } else {
-                    $nextpage = null;
                 }
                 $firstpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=0";
                 $canonicalpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitcurrent;
                 $lastpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitlast;
                 if (($limitcurrent > 0) && (!$outofrange)) {
                     $prevpage = $this->get_endpoint() . "?type_id=" . $typeid . "&limit=" . $limitnum . "&from=" . $limitprev;
-                } else {
-                    $prevpage = null;
                 }
             }
             if (isset($resourceid)) {
@@ -269,10 +257,12 @@ EOD;
     /**
      * Generate the JSON for a POST request.
      *
-     * @param string $body       POST body
-     * @param string $contextid  Course ID
+     * @param string $body POST body
+     * @param string $contextid Course ID
+     * @param string $typeid
      *
-     * return string
+     * @return string
+     * @throws \Exception
      */
     private function post_request_json($body, $contextid, $typeid) {
         global $CFG, $DB;
@@ -315,7 +305,7 @@ EOD;
         $params['gradetype'] = GRADE_TYPE_VALUE;
         $params['grademax']  = $max;
         $params['grademin']  = 0;
-        $item = new \grade_item(array('id' => 0, 'courseid' => $contextid));
+        $item = (object)(array)new \grade_item(array('id' => 0, 'courseid' => $contextid));
         \grade_item::set_properties($item, $params);
         $item->itemtype = 'mod';
         $item->itemmodule = 'lti';
@@ -326,7 +316,7 @@ EOD;
         }
         $id = $item->insert('mod/ltiservice_gradebookservices');
         try {
-            $gradebookservicesid = $DB->insert_record('ltiservice_gradebookservices', array(
+            $DB->insert_record('ltiservice_gradebookservices', (object)array(
                     'itemnumber' => $item->itemnumber,
                     'courseid' => $contextid,
                     'toolproxyid' => $toolproxyid,
@@ -351,7 +341,9 @@ EOD;
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     * @param string $typeid
+     *
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);

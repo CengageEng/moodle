@@ -24,6 +24,7 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+global $CFG;
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 /**
  * Restore subplugin class.
@@ -37,7 +38,7 @@ require_once($CFG->dirroot.'/mod/lti/locallib.php');
  * @author     Dirk Singels, Diego del Blanco, Claude Vervoort
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
+class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
 
     protected function define_lti_subplugin_structure() {
 
@@ -81,15 +82,18 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
         // so we will only create the entry in the ltiservice_gradebookservices table.
         // We will try to find a valid toolproxy in the system.
         // If it has been found before... we use it.
-        $newtoolproxyid = 0;
-        $courseid = $this->task->get_courseid();
-        if ($ltitoolproxy = $this->get_mappingid('ltitoolproxy', $data->toolproxyid) && $ltitoolproxy != 0) {
+        /* cache parent property to account for missing PHPDoc type specification */
+        /** @var backup_activity_task $activitytask */
+        $activitytask = $this->task;
+        $courseid = $activitytask->get_courseid();
+        $ltitoolproxy = $this->get_mappingid('ltitoolproxy', $data->toolproxyid);
+        if ($ltitoolproxy && $ltitoolproxy != 0) {
             $newtoolproxyid = $ltitoolproxy;
         } else { // If not, then we will call our own function to find it.
             $newtoolproxyid = $this->find_proxy_id($data);
         }
         try {
-            $gradebookservicesid = $DB->insert_record('ltiservice_gradebookservices', array(
+            $DB->insert_record('ltiservice_gradebookservices', (object) array(
                     'itemnumber' => $data->itemnumber,
                     'courseid' => $courseid,
                     'toolproxyid' => $newtoolproxyid,
@@ -115,14 +119,17 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
         // so we will only create the entry in the ltiservice_gradebookservices table.
         // We will try to find a valid type in the system.
         // If it has been done before we don't need to check it.
-        $courseid = $this->task->get_courseid();
+        /* cache parent property to account for missing PHPDoc type specification */
+        /** @var backup_activity_task $activitytask */
+        $activitytask = $this->task;
+        $courseid = $activitytask->get_courseid();
         if ($ltitypeid = $this->get_mappingid('ltitype', $data->typeid)) {
             $newtypeid = $ltitypeid;
         } else { // If not, then we will call our own function to find it.
             $newtypeid = $this->find_typeid($data, $courseid);
         }
         try {
-            $gradebookservicesid = $DB->insert_record('ltiservice_gradebookservices', array(
+            $DB->insert_record('ltiservice_gradebookservices', (object) array(
                     'itemnumber' => $data->itemnumber,
                     'courseid' => $courseid,
                     'toolproxyid' => null,
@@ -146,18 +153,23 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
         $data = (object)$data;
         // We will try to find a valid toolproxy in the system.It should have be done before
         // so we just need to find it in the mapping.
-        $newtoolproxyid = 0;
-        if ($ltitoolproxy = $this->get_mappingid('ltitoolproxy', $data->toolproxyid) && $ltitoolproxy != 0) {
+        $ltitoolproxy = $this->get_mappingid('ltitoolproxy', $data->toolproxyid);
+        if ($ltitoolproxy && $ltitoolproxy != 0) {
             $newtoolproxyid = $ltitoolproxy;
         } else {
             $newtoolproxyid = $this->find_proxy_id($data);
         }
-        $courseid = $this->task->get_courseid();
+        /* cache parent property to account for missing PHPDoc type specification */
+        /** @var backup_activity_task $activitytask */
+        $activitytask = $this->task;
+        $courseid = $activitytask->get_courseid();
         try {
-            $sql = 'SELECT * FROM {grade_items} gi
-                    INNER JOIN {ltiservice_gradebookservices} gbs ON (gi.itemnumber = gbs.itemnumber AND gi.courseid = gbs.courseid)
-                    WHERE gi.courseid =?
-                    AND gi.itemnumber =?';
+            $sql = 'SELECT * 
+                      FROM {grade_items} gi
+                INNER JOIN {ltiservice_gradebookservices} gbs ON (gi.itemnumber = gbs.itemnumber 
+                                                                 AND gi.courseid = gbs.courseid)
+                     WHERE gi.courseid = ?
+                           AND gi.itemnumber = ?';
             $conditions = array('courseid' => $courseid, 'itemnumber' => $data->itemnumber);
             // We will check if the record has been restored by a previous activity
             // and if not, we will restore it creating the right grade item and the
@@ -170,14 +182,14 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
                 $params['gradetype'] = GRADE_TYPE_VALUE;
                 $params['grademax']  = $data->grademax;
                 $params['grademin']  = $data->grademin;
-                $item = new \grade_item(array('id' => 0, 'courseid' => $courseid));
+                $item = (object)new \grade_item(array('id' => 0, 'courseid' => $courseid));
                 \grade_item::set_properties($item, $params);
                 $item->itemtype = 'mod';
                 $item->itemmodule = 'lti';
                 $item->itemnumber = get_next_itemnumber();
                 $item->idnumber = $data->idnumber;
                 $id = $item->insert('mod/ltiservice_gradebookservices');
-                $gradebookservicesid = $DB->insert_record('ltiservice_gradebookservices', array(
+                $DB->insert_record('ltiservice_gradebookservices', (object) array(
                         'itemnumber' => $item->itemnumber,
                         'courseid' => $courseid,
                         'toolproxyid' => $newtoolproxyid,
@@ -203,18 +215,23 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
         $data = (object)$data;
         // We will try to find a valid type in the system. It should have be done before
         // so we just need to find it in the mapping.
-        $courseid = $this->task->get_courseid();
+        /* cache parent property to account for missing PHPDoc type specification */
+        /** @var backup_activity_task $activitytask */
+        $activitytask = $this->task;
+        $courseid = $activitytask->get_courseid();
         if ($ltitypeid = $this->get_mappingid('ltitype', $data->typeid)) {
             $newtypeid = $ltitypeid;
         } else {
-            $courseid = $this->task->get_courseid();
+            $courseid = $activitytask->get_courseid();
             $newtypeid = $this->find_typeid($data, $courseid);
         }
         try {
-            $sql = 'SELECT * FROM {grade_items} gi
-                    INNER JOIN {ltiservice_gradebookservices} gbs ON (gi.itemnumber = gbs.itemnumber AND gi.courseid = gbs.courseid)
-                    WHERE gi.courseid =?
-                    AND gi.itemnumber =?';
+            $sql = 'SELECT * 
+                      FROM {grade_items} gi
+                INNER JOIN {ltiservice_gradebookservices} gbs ON (gi.itemnumber = gbs.itemnumber 
+                                                                 AND gi.courseid = gbs.courseid)
+                     WHERE gi.courseid = ?
+                           AND gi.itemnumber = ?';
             $conditions = array('courseid' => $courseid, 'itemnumber' => $data->itemnumber);
             // We will check if the record has been restored by a previous activity
             // and if not, we will restore it creating the right grade item and the
@@ -227,14 +244,14 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin{
                 $params['gradetype'] = GRADE_TYPE_VALUE;
                 $params['grademax']  = $data->grademax;
                 $params['grademin']  = $data->grademin;
-                $item = new \grade_item(array('id' => 0, 'courseid' => $courseid));
+                $item = (object)new \grade_item(array('id' => 0, 'courseid' => $courseid));
                 \grade_item::set_properties($item, $params);
                 $item->itemtype = 'mod';
                 $item->itemmodule = 'lti';
                 $item->itemnumber = get_next_itemnumber();
                 $item->idnumber = $data->idnumber;
                 $id = $item->insert('mod/ltiservice_gradebookservices');
-                $gradebookservicesid = $DB->insert_record('ltiservice_gradebookservices', array(
+                $DB->insert_record('ltiservice_gradebookservices', (object) array(
                         'itemnumber' => $item->itemnumber,
                         'courseid' => $courseid,
                         'toolproxyid' => null,

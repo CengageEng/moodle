@@ -27,6 +27,7 @@
 namespace ltiservice_gradebookservices\local\resource;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
+use mod_lti\local\ltiservice\resource_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class scores extends \mod_lti\local\ltiservice\resource_base {
+class scores extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
+     * @param \ltiservice_gradebookservices\local\service\gradebookservices $service Service instance
      */
     public function __construct($service) {
 
@@ -60,7 +61,7 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
         global $CFG, $DB;
@@ -80,11 +81,7 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
         }
         $container = empty($contenttype) || ($contenttype === $this->formats[0]);
         // We will receive typeid when working with LTI 1.x, if not the we are in LTI 2.
-        if (isset($_GET['type_id'])) {
-            $typeid = $_GET['type_id'];
-        } else {
-            $typeid = null;
-        }
+        $typeid = optional_param('type_id', null, PARAM_ALPHANUM);
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
@@ -128,6 +125,7 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
                             throw new \Exception(null, 403);
                 }
             }
+            $json = '[]';
             require_once($CFG->libdir.'/gradelib.php');
             switch ($response->get_request_method()) {
                 case 'GET':
@@ -151,11 +149,13 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Generate the JSON for a POST request.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
-     * @param string $body       POST body
-     * @param string $item       Grade item instance
+     * @param \mod_lti\local\ltiservice\response $response Response object for this request.
+     * @param string $body POST body
+     * @param object $item Grade item instance
+     * @param string $contextid
+     * @param string $typeid
      *
-     * return string
+     * @throws \Exception
      */
     private function post_request_json($response, $body, $item, $contextid, $typeid) {
         $result = json_decode($body);
@@ -198,8 +198,10 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Reset a Result.
      *
-     * @param object $item       Lineitem instance
-     * @param string  $userid    User ID
+     * @param object $item Lineitem instance
+     * @param string $userid User ID
+     *
+     * @throws \Exception
      */
     private function reset_result($item, $userid) {
 
@@ -220,7 +222,9 @@ class scores extends \mod_lti\local\ltiservice\resource_base {
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @return Array with the permissions related to this resource by the $lti_type or null if none.
+     * @param string $typeid
+     *
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {
         $tool = lti_get_type_type_config($typeid);

@@ -54,7 +54,7 @@ class response {
     private $body;
     /** @var array HTTP response codes. */
     private $responsecodes;
-    /** @var array HTTP additonal headers. */
+    /** @var array HTTP additional headers. */
     private $additionalheaders;
 
     /**
