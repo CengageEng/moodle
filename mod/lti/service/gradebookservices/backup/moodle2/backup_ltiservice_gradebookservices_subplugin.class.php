@@ -167,6 +167,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         $ltitype = $DB->get_record('lti_types', ['id' => $lti->typeid], 'toolproxyid, baseurl');
 
         if ($ltitype) {
+            $typeid = $lti->typeid;
             $toolproxyid = $ltitype->toolproxyid;
             $baseurl = $ltitype->baseurl;
         } else
