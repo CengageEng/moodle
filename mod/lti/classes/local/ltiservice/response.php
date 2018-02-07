@@ -54,7 +54,7 @@ class response {
     private $body;
     /** @var array HTTP response codes. */
     private $responsecodes;
-    /** @var array HTTP additonal headers. */
+    /** @var array HTTP additional headers. */
     private $additionalheaders;
 
     /**
@@ -85,7 +85,7 @@ class response {
             500 => 'Internal Server Error',
             501 => 'Not Implemented'
         );
-        $this->additionalheaders= array();
+        $this->additionalheaders = array();
 
     }
 

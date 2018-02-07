@@ -28,11 +28,13 @@ namespace mod_lti\local\ltiservice;
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
 require_once($CFG->dirroot . '/mod/lti/locallib.php');
 require_once($CFG->dirroot . '/mod/lti/OAuthBody.php');
 
 // TODO: Switch to core oauthlib once implemented - MDL-30149.
 use moodle\mod\lti as lti;
+use stdClass;
 
 
 /**
@@ -133,7 +135,7 @@ abstract class service_base {
     /**
      * Get the resources for this service.
      *
-     * @return array
+     * @return resource_base[]
      */
     abstract public function get_resources();
 
@@ -162,7 +164,7 @@ abstract class service_base {
      *  in the texts file with _help at the end, If null, no help button.
      * - HelpButton $component component to find the languages files. If null, no help button.
      *
-     * @return an array of options to add to the add/edit external tool or null if no options to add.
+     * @return array Options list to add to the add/edit external tool or null if no options to add.
      *
      */
     public function get_configuration_options() {
@@ -172,7 +174,7 @@ abstract class service_base {
     /**
      * Return an array with the names of the parameters that the service will be saving in the configuration
      *
-     * @return  an array with the names of the parameters that the service will be saving in the configuration
+     * @return array  Names list of the parameters that the service will be saving in the configuration
      *
      */
     public function get_configuration_parameter_names() {
@@ -186,37 +188,32 @@ abstract class service_base {
      * a course, the check on the presence of a link is a proxy to infer a Site Tool engagement
      * until an explicit Site Tool - Course relationship exists.
      *
-     * @param $courseid. The course id.
-     * @param $typeid. The tool lti type id.
+     * @param string $typeid The tool lti type id.
+     * @param string $courseid The course id.
      *
      * @return True if tool is used in context.
      */
     public function is_used_in_context($typeid, $courseid) {
         global $DB;
 
-        $ok = false;
         // Ideally there would be an explicit engagement of a Site tool into a Course,
         // right now relying on the presence of a link.
-        if (count($DB->get_records('lti', array('course' => $courseid, 'typeid' => $typeid), IGNORE_MULTIPLE))>0) {
-            $ok = true;
-        } else if ($DB->get_record('lti_types', array('course' => $courseid, 'id' => $typeid), IGNORE_MULTIPLE) != false) {
-            $ok = true;
-        }
-        return $ok;
+        $ok = $DB->record_exists('lti', array('course' => $courseid, 'typeid' => $typeid));
+        return ($ok || $DB->record_exists('lti_types', array('course' => $courseid, 'id' => $typeid)));
     }
-    
+
     /**
      * Checks if there is a site tool ir a course tool for this site
      *
-     * @param $courseid. The course id.
-     * @param $typeid. The tool lti type id.
+     * @param string $typeid The tool lti type id.
+     * @param string $courseid The course id.
      *
      * @return True if tool is used in context.
      */
     public function is_allowed_in_context($typeid, $courseid) {
         global $DB;
         $ok = false;
-        // It it is a Course tool for this site or a Site tool,
+        // It it is a Course tool for this site or a Site tool.
         $type = $DB->get_record('lti_types', array('id' => $typeid));
         if ($type && ($type->course == $courseid || $type->course == 1)) {
             $ok = true;
@@ -227,16 +224,16 @@ abstract class service_base {
     /**
      * Return an array of key/values to add to the launch parameters.
      *
-     * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
-     * @param $course. the course id.
-     * @param $userid. The user id.
-     * @param $typeid. The tool lti type id.
-     * @param $modlti. The id of the lti activity.
+     * @param string $messagetype  'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
+     * @param string $courseid     The course id.
+     * @param string $userid       The user id.
+     * @param string $typeid       The tool lti type id.
+     * @param string $modlti       The id of the lti activity.
      *
      * The type is passed to check the configuration
      * and not return parameters for services not used.
      *
-     * @return an array of key/value pairs to add as launch parameters.
+     * @return array Key/value pairs to add as launch parameters.
      */
     public function get_launch_parameters($messagetype, $courseid, $userid, $typeid, $modlti = null) {
         return array();
@@ -313,11 +310,11 @@ abstract class service_base {
     /**
      * Check that the request has been properly signed.
      *
-     * @param string $type_id        Tool id
-     * @param string $courseid       The course we are at
-     * @param string $body           Request body (null if none)
+     * @param string $typeid The tool id
+     * @param string $courseid The course we are at
+     * @param string $body Request body (null if none)
      *
-     * @return boolean
+     * @return bool
      */
     public function check_type($typeid, $courseid, $body = null) {
 
@@ -326,7 +323,7 @@ abstract class service_base {
         $consumerkey = lti\get_oauth_key_from_headers();
         if (empty($typeid)) {
             return $ok;
-        } else if ($this->is_used_in_context($typeid, $courseid)) {
+        } else if ($this->is_allowed_in_context($typeid, $courseid)) {
             $tool = lti_get_type_type_config($typeid);
             if ($tool !== false) {
                 if (!$this->is_unsigned() && ($tool->lti_resourcekey == $consumerkey)) {
