@@ -317,7 +317,7 @@ EOD;
         $id = $item->insert('mod/ltiservice_gradebookservices');
         try {
             $DB->insert_record('ltiservice_gradebookservices', (object)array(
-                    'itemnumber' => $item->itemnumber,
+                    'gradeitemid' => $id,
                     'courseid' => $contextid,
                     'toolproxyid' => $toolproxyid,
                     'typeid' => $typeid,

@@ -270,7 +270,7 @@ class lineitem extends resource_base {
                 }
                 $DB->update_record('ltiservice_gradebookservices', (object)array(
                         'id' => $gbs->id,
-                        'itemnumber' => $gbs->itemnumber,
+                        'gradeitemid' => $gbs->gradeitemid,
                         'courseid' => $gbs->courseid,
                         'toolproxyid' => $toolproxyid,
                         'typeid' => $typeid,
