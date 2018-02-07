@@ -133,27 +133,27 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // Define sources.
         $thisactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
                                            FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber 
+                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
                                                                                     AND g.courseid = l.courseid)
                                      INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
                                           WHERE g.courseid = ?
-                                                AND g.itemtype='mod' 
+                                                AND g.itemtype='mod'
                                                 AND g.itemmodule = 'lti'
-                                                AND g.iteminstance = ? 
+                                                AND g.iteminstance = ?
                                                 AND l.typeid is null";
         $thisactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
                                             FROM {grade_items} g
-                                      INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber 
+                                      INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
                                                                                      AND g.courseid = l.courseid)
                                       INNER JOIN {lti_types} t ON (t.id = l.typeid)
                                            WHERE g.courseid = ?
-                                             AND g.itemtype='mod' 
+                                             AND g.itemtype='mod'
                                              AND g.itemmodule = 'lti'
-                                             AND g.iteminstance = ? 
+                                             AND g.iteminstance = ?
                                              AND l.toolproxyid is null";
 
         // If and activity is assigned to a type that doesn't exists we don't want to backup any related lineitems.``
-        // Default to invalid condition
+        // Default to invalid condition.
         $typeid = 0;
         $toolproxyid = '0';
         $baseurl = 'NOVALIDTYPE';
@@ -167,12 +167,13 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         $ltitype = $DB->get_record('lti_types', ['id' => $lti->typeid], 'toolproxyid, baseurl');
 
         if ($ltitype) {
+            $typeid = $lti->typeid;
             $toolproxyid = $ltitype->toolproxyid;
             $baseurl = $ltitype->baseurl;
-        } else
-        if ($lti->typeid == self::NONVALIDTYPEID) { // This activity comes from an old backup
+        } else if ($lti->typeid == self::NONVALIDTYPEID) { // This activity comes from an old backup.
             // 1. Let's check if the activity is coupled. If so, find the values in the GBS element.
-            $gbsrecord = $DB->get_record('ltiservice_gradebookservices', ['ltilinkid' => $activityid],'typeid,toolproxyid,baseurl');
+            $gbsrecord = $DB->get_record('ltiservice_gradebookservices',
+                    ['ltilinkid' => $activityid], 'typeid,toolproxyid,baseurl');
             if ($gbsrecord) {
                 $typeid = $gbsrecord->typeid;
                 $toolproxyid = $gbsrecord->toolproxyid;
@@ -194,26 +195,26 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         }
         $nonactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
                                           FROM {grade_items} g
-                                    INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber 
+                                    INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
                                                                                    AND g.courseid = l.courseid)
                                     INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
                                          WHERE g.courseid = ?
-                                               AND g.itemtype='mod' 
+                                               AND g.itemtype='mod'
                                                AND g.itemmodule = 'lti'
                                                AND g.iteminstance is null
-                                               AND l.typeid is null 
+                                               AND l.typeid is null
                                                AND l.toolproxyid = ?";
         $nonactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
                                            FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber 
+                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
                                                                                     AND g.courseid = l.courseid)
                                      INNER JOIN {lti_types} t ON (t.id = l.typeid)
                                           WHERE g.courseid = ?
-                                                AND g.itemtype='mod' 
+                                                AND g.itemtype='mod'
                                                 AND g.itemmodule = 'lti'
                                                 AND g.iteminstance is null
-                                                AND l.typeid = ? 
-                                                AND l.baseurl = ? 
+                                                AND l.typeid = ?
+                                                AND l.baseurl = ?
                                                 AND l.toolproxyid is null";
 
         $thisactivitylineitemsparams = ['courseid' => backup::VAR_COURSEID, 'iteminstance' => backup::VAR_ACTIVITYID];
