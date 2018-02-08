@@ -140,36 +140,9 @@ abstract class service_base {
     abstract public function get_resources();
 
     /**
-     * Return an array of options to add to the add/edit external tool.
-     * The array will have elements with this attributes:
-     *
-     * - type ( only 'select', 'text', 'passwordunmask' or 'checkbox' are
-     * allowed by the moment) view lib/pear/HTML/QuickForm for all types.
-     * - array of type specific parameters:
-     *  - if select it needs:
-     *      - name.
-     *      - label.
-     *      - array of options.
-     *  - if text it needs:
-     *      - name.
-     *      - label.
-     *      - parameters (example: array('size' => '64')).
-     *  - if checkbox it needs:
-     *      - name.
-     *      - main label (left side of the form).
-     *      - after checkbox lable.
-     * - setType value or null, ('int', 'text'...) If null, no default value.
-     * - setDefault or null ('2', ...) If null, no default value.
-     * - HelpButton $identifier usually the same than the name and it will be
-     *  in the texts file with _help at the end, If null, no help button.
-     * - HelpButton $component component to find the languages files. If null, no help button.
-     *
-     * @return array Options list to add to the add/edit external tool or null if no options to add.
-     *
+     * @param \MoodleQuickForm $mform Moodle quickform object definition
      */
-    public function get_configuration_options() {
-        return array();
-    }
+    public function get_configuration_options(&$mform) {}
 
     /**
      * Return an array with the names of the parameters that the service will be saving in the configuration

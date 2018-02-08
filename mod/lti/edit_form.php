@@ -288,32 +288,10 @@ class mod_lti_edit_types_form extends moodleform {
     public function get_lti_advantage_services(&$mform) {
         // For each service add the label and get the array of configuration.
         $services = lti_get_services();
-        $supportedoptions = array('select', 'text', 'checkbox');
-        $displayheader = true;
+        $mform->addElement('header', 'services', get_string('services', 'lti'));
         foreach ($services as $service) {
-            $configurationoptions = $service->get_configuration_options();
-            if (count($configurationoptions) > 0) {
-                if ($displayheader) {
-                    $mform->addElement('header', 'services', get_string('services', 'lti'));
-                    $displayheader = false;
-                }
-                foreach ($configurationoptions as $configurationoption) {
-                    if (in_array($configurationoption[0], $supportedoptions)) {
-                        $mform->addElement($configurationoption[0],
-                            $configurationoption[1][0], $configurationoption[1][1], $configurationoption[1][2]);
-                        if (!is_null($configurationoption[2])) {
-                            $mform->setType($configurationoption[1][0], $configurationoption[2]);
-                        }
-                        if (!is_null($configurationoption[3])) {
-                            $mform->setDefault($configurationoption[1][0], $configurationoption[3]);
-                        }
-                        if ((!is_null($configurationoption[4])) && (!is_null($configurationoption[5]))) {
-                            $mform->addHelpButton($configurationoption[1][0],
-                                $configurationoption[4],  $configurationoption[5]);
-                        }
-                    }
-                }
-            }
+            /** @var \mod_lti\local\ltiservice\service_base $service */
+            $service->get_configuration_options($mform);
         }
     }
 }
