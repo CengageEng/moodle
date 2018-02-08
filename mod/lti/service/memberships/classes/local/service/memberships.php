@@ -279,56 +279,31 @@ EOD;
     }
 
     /**
-     * Return an array of options to add to the add/edit external tool.
-     * The array will have elements with this attributes:
+     * Adds form elements for membership add/edit page.
      *
-     * - type ( only 'select', 'text', 'checkbox' are
-     * allowed by the moment) view lib/pear/HTML/QuickForm for all types.
-     * - array of type specific parameters:
-     *  - if select it needs:
-     *      - name.
-     *      - label.
-     *      - array of options.
-     *  - if text it needs:
-     *      - name.
-     *      - label.
-     *      - parameters (example: array('size' => '64')).
-     *  - if checkbox it needs:
-     *      - name.
-     *      - main label (left side of the form).
-     *      - after checkbox lable.
-     * - setType value or null, ('int', 'text'...) If null, no default value.
-     * - setDefault or null ('2', ...) If null, no default value.
-     * - HelpButton $identifier usually the same than the name and it will be
-     *  in the texts file with _help at the end, If null, no help button.
-     * - HelpButton $component component to find the languages files. If null, no help button.
-     *
-     * @return array of options to add to the add/edit external tool or null if no options to add.
-     *
+     * @param \MoodleQuickForm $mform
      */
-    public function get_configuration_options() {
+    public function get_configuration_options(&$mform) {
+        $elementname = 'membership_management';
+        $options = [
+            $this->get_string('notallow'),
+            $this->get_string('allow')
+        ];
 
-        $configurationoptions = array();
+        $mform->addElement('select', $elementname, $this->get_string($elementname), $options);
+        $mform->setType($elementname, 'int');
+        $mform->setDefault($elementname, 0);
+        $mform->addHelpButton($elementname, $elementname, self::LTI_SERVICE_COMPONENT);
+    }
 
-        $optionsmem = array();
-        $optionsmem[0] = get_string('notallow', 'ltiservice_memberships');
-        $optionsmem[1] = get_string('allow', 'ltiservice_memberships');
-
-        $membership = array();
-        $membership[0] = 'select';
-        $parametersmem = array();
-        $parametersmem[0] = 'ltiservice_memberships';
-        $parametersmem[1] = get_string('membership_management', 'ltiservice_memberships') . ':';
-        $parametersmem[2] = $optionsmem;
-        $membership[1] = $parametersmem;
-        $membership[2] = 'int';
-        $membership[3] = '0';
-        $membership[4] = 'membership_management';
-        $membership[5] = 'ltiservice_memberships';
-
-        $configurationoptions[0] = $membership;
-
-        return $configurationoptions;
+    /**
+     * Retrieves string from lang file
+     *
+     * @param string $identifier
+     * @return string
+     */
+    private function get_string($identifier) {
+        return get_string($identifier, self::LTI_SERVICE_COMPONENT);
     }
 
     /**

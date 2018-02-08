@@ -2021,23 +2021,17 @@ function lti_add_type($type, $config) {
 
     if ($id) {
         foreach ($config as $key => $value) {
-            $keyprefixlti = substr($key, 4);
-            $keyprefixltiservice = substr($key, 11);
             if (!is_null($value)) {
-                $keyprefix = true;
-                if ($keyprefixlti === 'lti_') {
-                    $keyprefix = $keyprefixlti;
-                }
-                if ($keyprefixltiservice === 'ltiservice_') {
-                    $keyprefix = $keyprefixltiservice;
-                }
-                if ($keyprefix) {
+                $fieldparts = preg_split("/(lti|ltiservice)_/i", $key);
+                // if array has only one element, it did not start with pattern
+                if (count($fieldparts) < 2) {
                     continue;
                 }
+                $fieldname = $fieldparts[1];
 
                 $record = new \StdClass();
                 $record->typeid = $id;
-                $record->name = $keyprefix;
+                $record->name = $fieldname;
                 $record->value = $value;
 
                 lti_add_config($record);
