@@ -133,7 +133,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // Define sources.
         $thisactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
                                            FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
+                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
                                                                                     AND g.courseid = l.courseid)
                                      INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
                                           WHERE g.courseid = ?
@@ -143,7 +143,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
                                                 AND l.typeid is null";
         $thisactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
                                             FROM {grade_items} g
-                                      INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
+                                      INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
                                                                                      AND g.courseid = l.courseid)
                                       INNER JOIN {lti_types} t ON (t.id = l.typeid)
                                            WHERE g.courseid = ?
@@ -195,7 +195,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         }
         $nonactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
                                           FROM {grade_items} g
-                                    INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
+                                    INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
                                                                                    AND g.courseid = l.courseid)
                                     INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
                                          WHERE g.courseid = ?
@@ -206,7 +206,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
                                                AND l.toolproxyid = ?";
         $nonactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
                                            FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.itemnumber = l.itemnumber
+                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
                                                                                     AND g.courseid = l.courseid)
                                      INNER JOIN {lti_types} t ON (t.id = l.typeid)
                                           WHERE g.courseid = ?

@@ -27,6 +27,11 @@
 namespace ltiservice_gradebookservices\local\service;
 
 use ltiservice_gradebookservices\local\resource\lineitem;
+use ltiservice_gradebookservices\local\resource\lineitems;
+use ltiservice_gradebookservices\local\resource\results;
+use ltiservice_gradebookservices\local\resource\scores;
+use mod_lti\local\ltiservice\resource_base;
+use mod_lti\local\ltiservice\service_base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,8 +43,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class gradebookservices extends \mod_lti\local\ltiservice\service_base {
-
+class gradebookservices extends service_base {
 
     /** Internal service name */
     const SERVICE_NAME = 'ltiservice_gradebookservices';
@@ -58,7 +62,7 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Get the resources for this service.
      *
-     * @return array
+     * @return resource_base[]
      */
     public function get_resources() {
 
@@ -66,10 +70,10 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
         // Lineitems should be after lineitem.
         if (empty($this->resources)) {
             $this->resources = array();
-            $this->resources[] = new \ltiservice_gradebookservices\local\resource\lineitem($this);
-            $this->resources[] = new \ltiservice_gradebookservices\local\resource\lineitems($this);
-            $this->resources[] = new \ltiservice_gradebookservices\local\resource\results($this);
-            $this->resources[] = new \ltiservice_gradebookservices\local\resource\scores($this);
+            $this->resources[] = new lineitem($this);
+            $this->resources[] = new lineitems($this);
+            $this->resources[] = new results($this);
+            $this->resources[] = new scores($this);
 
         }
 
@@ -111,7 +115,7 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Return an array with the names of the parameters that the service will be saving in the configuration
      *
-     * @return  an array with the names of the parameters that the service will be saving in the configuration
+     * @return array with the names of the parameters that the service will be saving in the configuration
      *
      */
     public function get_configuration_parameter_names() {
@@ -121,16 +125,16 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Return an array of key/values to add to the launch parameters.
      *
-     * @param $messagetype. 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
-     * @param $courseid. the course id.
-     * @param $userid. The user id.
-     * @param $typeid. The tool lti type id.
-     * @param $modlti. The id of the lti activity.
+     * @param string $messagetype 'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
+     * @param string $courseid the course id.
+     * @param object $user The user id.
+     * @param string $typeid The tool lti type id.
+     * @param string $modlti The id of the lti activity.
      *
      * The type is passed to check the configuration
      * and not return parameters for services not used.
      *
-     * @return an array of key/value pairs to add as launch parameters.
+     * @return array of key/value pairs to add as launch parameters.
      */
     public function get_launch_parameters($messagetype, $courseid, $user, $typeid, $modlti = null) {
         global $DB;
@@ -168,13 +172,16 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Fetch the lineitem instances.
      *
-     * @param string $courseid       ID of course
-     * @param string $resourceid     Resource identifier used for filtering, may be null
+     * @param string $courseid ID of course
+     * @param string $resourceid Resource identifier used for filtering, may be null
      * @param string $ltilinkid Resource Link identifier used for filtering, may be null
-     * @param int    $limitfrom      Offset for the first line item to include in a paged set
-     * @param int    $limitnum       Maximum number of line items to include in the paged set
+     * @param string $tag
+     * @param int $limitfrom Offset for the first line item to include in a paged set
+     * @param int $limitnum Maximum number of line items to include in the paged set
+     * @param string $typeid
      *
      * @return array
+     * @throws \Exception
      */
     public function get_lineitems($courseid, $resourceid, $ltilinkid, $tag, $limitfrom, $limitnum, $typeid) {
         global $DB;
@@ -197,14 +204,13 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
         }
 
         $sql = "SELECT i.*, s.tag
-        FROM {grade_items} i
-        LEFT JOIN {ltiservice_gradebookservices} s ON (i.id = s.gradeitemid AND i.courseid = s.courseid)
-        WHERE (i.courseid = :courseid)
-        AND (i.itemtype = :itemtype)
-        AND (i.itemmodule = :itemmodule)
-        {$optionalfilters}
-        ORDER by i.id";
-
+                  FROM {grade_items} i
+             LEFT JOIN {ltiservice_gradebookservices} s ON (i.id = s.gradeitemid AND i.courseid = s.courseid)
+                 WHERE (i.courseid = :courseid)
+                      AND (i.itemtype = :itemtype)
+                      AND (i.itemmodule = :itemmodule)
+                      {$optionalfilters}
+               ORDER BY i.id";
         try {
             $lineitems = $DB->get_records_sql($sql, $params);
         } catch (\Exception $e) {
@@ -214,6 +220,7 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
         // For each one, check the gbs id, and check that toolproxy matches. If so, add the
         // tag to the result and add it to a final results array.
         $lineitemstoreturn = array();
+        $lineitemsandtotalcount = array();
         if ($lineitems) {
             foreach ($lineitems as $lineitem) {
                 $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($lineitem->id);
@@ -271,10 +278,11 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
      *
      * Returns the lineitem instance if found, otherwise false.
      *
-     * @param string   $courseid   ID of course
-     * @param string   $itemid     ID of lineitem
+     * @param string $courseid ID of course
+     * @param string $itemid ID of lineitem
+     * @param string $typeid
      *
-     * @return object
+     * @return \ltiservice_gradebookservices\local\resource\lineitem|bool
      */
     public function get_lineitem($courseid, $itemid, $typeid) {
         global $DB;
@@ -312,20 +320,20 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
         } else {
             if (is_null($typeid)) {
                 $sql = "SELECT i.*,s.tag
-                        FROM {grade_items} i,{ltiservice_gradebookservices} s
-                        WHERE (i.courseid = :courseid)
-                                AND (i.id = :itemid)
-                                AND (s.id = :gbsid)
-                                AND (s.toolproxyid = :tpid)";
+                          FROM {grade_items} i,{ltiservice_gradebookservices} s
+                         WHERE (i.courseid = :courseid)
+                               AND (i.id = :itemid)
+                               AND (s.id = :gbsid)
+                               AND (s.toolproxyid = :tpid)";
                 $params = array('courseid' => $courseid, 'itemid' => $itemid, 'tpid' => $this->get_tool_proxy()->id,
                         'gbsid' => $gbs->id);
             } else {
                 $sql = "SELECT i.*,s.tag
-                        FROM {grade_items} i,{ltiservice_gradebookservices} s
-                        WHERE (i.courseid = :courseid)
-                                AND (i.id = :itemid)
-                                AND (s.id = :gbsid)
-                                AND (s.typeid = :typeid)";
+                          FROM {grade_items} i,{ltiservice_gradebookservices} s
+                         WHERE (i.courseid = :courseid)
+                               AND (i.id = :itemid)
+                               AND (s.id = :gbsid)
+                               AND (s.typeid = :typeid)";
                 $params = array('courseid' => $courseid, 'itemid' => $itemid, 'typeid' => $typeid,
                         'gbsid' => $gbs->id);
             }
@@ -347,11 +355,13 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Set a grade item.
      *
-     * @param object  $item               Grade Item record
-     * @param object  $result             Result object
-     * @param string  $userid             User ID
+     * @param object $item Grade Item record
+     * @param object $result Result object
+     * @param string $userid User ID
+     *
+     * @throws \Exception
      */
-    public static function set_grade_item($item, $result, $userid, $typeid) {
+    public static function set_grade_item($item, $result, $userid) {
         global $DB;
 
         if ($DB->get_record('user', array('id' => $userid)) === false) {
@@ -394,8 +404,10 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Get the JSON representation of the grade item.
      *
-     * @param object  $item               Grade Item record
-     * @param string  $endpoint           Endpoint for lineitems container request
+     * @param object $item Grade Item record
+     * @param string $endpoint Endpoint for lineitems container request
+     * @param string $typeid
+     *
      * @return string
      */
     public static function item_to_json($item, $endpoint, $typeid) {
@@ -485,8 +497,12 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
             $sqlparams2['linkid'] = $linkid;
             $sqlparams2['course'] = $course;
             $sqlparams2['toolproxy'] = $toolproxy;
-            $sql = 'SELECT lti.* FROM {lti} lti JOIN {lti_types} typ on lti.typeid=typ.id where
-            lti.id=? and lti.course=?  and typ.toolproxyid=?';
+            $sql = 'SELECT lti.*
+                      FROM {lti} lti
+                INNER JOIN {lti_types} typ ON lti.typeid = typ.id
+                     WHERE lti.id = ?
+                           AND lti.course = ?
+                           AND typ.toolproxyid = ?';
             return $DB->record_exists_sql($sql, $sqlparams2);
         }
     }
@@ -519,8 +535,12 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
                 $sqlparams2['linkid'] = $linkid;
                 $sqlparams2['course'] = $course;
                 $sqlparams2['typeid'] = $typeid;
-                $sql = 'SELECT lti.* FROM {lti} lti JOIN {lti_types} typ on lti.typeid=typ.id where
-            lti.id=? and lti.course=?  and typ.id=?';
+                $sql = 'SELECT lti.*
+                          FROM {lti} lti
+                    INNER JOIN {lti_types} typ ON lti.typeid = typ.id
+                         WHERE lti.id = ?
+                               AND lti.course = ?
+                               AND typ.id = ?';
                 return $DB->record_exists_sql($sql, $sqlparams2);
             }
         } else {
@@ -545,18 +565,19 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
                                   WHERE gi.itemtype = "mod"
                        AND gi.itemmodule = "lti")';
         try {
-            $deleted = $DB->execute($sql);
+            $DB->execute($sql);
         } catch (\Exception $e) {
-            $deleted = false;
+            debugging("Error deleting orphan gradebook rows: ", $e);
         }
     }
 
     /**
      * Check if a user can be graded in a course
      *
-     * @param string $courseid            The course
-     * @param string $user                The user
+     * @param string $courseid The course
+     * @param string $userid The user
      *
+     * @return bool
      */
     public static function is_user_gradable_in_course($courseid, $userid) {
         global $CFG;
@@ -582,10 +603,10 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
      * Find the right element in the ltiservice_gradebookservice table for a lineitem
      *
      * @param string $lineitemid            The lineitem
-     * @return the gradebookservice id or false if none
+     * @return object|bool gradebookservice id or false if none
      */
     public static function find_ltiservice_gradebookservice_for_lineitem($lineitemid) {
-        global $CFG, $DB;
+        global $DB;
 
         if (!$lineitemid) {
             return false;
@@ -607,11 +628,10 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
     /**
      * Validates specific ISO 8601 format of the timestamps.
      *
-     * @param string $ldate The timestamp to check.
+     * @param string $date The timestamp to check.
      * @return boolean true or false if the date matches the format.
      *
      */
-
     public static function validate_iso8601_date($date) {
         if (preg_match('/^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])' .
                 '(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))' .
@@ -620,29 +640,6 @@ class gradebookservices extends \mod_lti\local\ltiservice\service_base {
             return true;
         } else {
             return false;
-        }
-    }
-
-    /**
-     * Validates paging query parameters for boundary conditions.
-     *
-     * @param string $limit maximum number of line items to include in the response, must be greater than one if provided
-     * @param string $from offset for the first line item to include in this paged set, must be zero or greater and
-     *                    requires a limit
-     * @throws \Exception if the paging query parameters are invalid
-     */
-    public static function validate_paging_query_parameters($limit, $from=null) {
-
-        if (isset($limit)) {
-            if (!is_numeric($limit) || $limit <= 0) {
-                throw new \Exception(null, 400);
-            }
-        }
-
-        if (isset($from)) {
-            if (!isset($limit) || !is_numeric($from) || $from < 0) {
-                throw new \Exception(null, 400);
-            }
         }
     }
 }
