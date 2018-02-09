@@ -710,6 +710,7 @@ $string['emailresetconfirmsent'] = 'An email has been sent to your address at <b
 If you continue to have difficulty, contact the site administrator.';
 $string['emailtoprivatefiles'] = 'You can also e-mail files as attachments straight to your private files space. Simply attach your files to an e-mail and send it to {$a}';
 $string['emailtoprivatefilesdenied'] = 'Your administrator has disabled the option to upload your own private files.';
+$string['emailuserhasnone'] = 'There is no email address for the user.';
 $string['emailvia'] = '{$a->name} (via {$a->siteshortname})';
 $string['emptydragdropregion'] = 'empty region';
 $string['enable'] = 'Enable';
@@ -2149,10 +2150,6 @@ $string['yourteacher'] = 'your {$a}';
 $string['yourwordforx'] = 'Your word for \'{$a}\'';
 $string['zippingbackup'] = 'Zipping backup';
 $string['deprecatedeventname'] = '{$a} (no longer in use)';
-
-// Deprecated since Moodle 3.1.
-$string['filetoolarge'] = 'is too large to upload';
-$string['maxbytesforfile'] = 'The file {$a} is larger than the maximum size allowed.';
 
 // Deprecated since Moodle 3.2.
 $string['modchooserenable'] = 'Activity chooser on';
