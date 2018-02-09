@@ -205,13 +205,12 @@ class gradebookservices extends service_base {
 
         $sql = "SELECT i.*, s.tag
                   FROM {grade_items} i
-             LEFT JOIN {ltiservice_gradebookservices} s ON (i.itemnumber = s.itemnumber AND i.courseid = s.courseid)
+             LEFT JOIN {ltiservice_gradebookservices} s ON (i.id = s.gradeitemid AND i.courseid = s.courseid)
                  WHERE (i.courseid = :courseid)
-                       AND (i.itemtype = :itemtype)
-                       AND (i.itemmodule = :itemmodule)
-                       {$optionalfilters}
-              ORDER BY i.id";
-
+                      AND (i.itemtype = :itemtype)
+                      AND (i.itemmodule = :itemmodule)
+                      {$optionalfilters}
+               ORDER BY i.id";
         try {
             $lineitems = $DB->get_records_sql($sql, $params);
         } catch (\Exception $e) {
@@ -263,6 +262,7 @@ class gradebookservices extends service_base {
                     }
                 }
             }
+            $lineitemsandtotalcount = array();
             array_push($lineitemsandtotalcount, count($lineitemstoreturn));
             // Return the right array based in the paging parameters limit and from.
             if (($limitnum) && ($limitnum > 0)) {
@@ -613,14 +613,10 @@ class gradebookservices extends service_base {
         }
         $gradeitem = $DB->get_record('grade_items', array('id' => $lineitemid));
         if ($gradeitem) {
-            if (isset($gradeitem->itemnumber)) {
-                $gbs = $DB->get_record('ltiservice_gradebookservices',
-                        array('itemnumber' => $gradeitem->itemnumber, 'courseid' => $gradeitem->courseid));
-                if ($gbs) {
-                    return $gbs;
-                } else {
-                    return false;
-                }
+            $gbs = $DB->get_record('ltiservice_gradebookservices',
+                    array('gradeitemid' => $gradeitem->id, 'courseid' => $gradeitem->courseid));
+            if ($gbs) {
+                return $gbs;
             } else {
                 return false;
             }
