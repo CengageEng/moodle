@@ -1583,7 +1583,6 @@ function lti_get_domain_from_url($url) {
     if (preg_match(LTI_URL_DOMAIN_REGEX, $url, $matches)) {
         return $matches[1];
     }
-    throw new Exception('Unable to extract domain from LTI tool url.');
 }
 
 function lti_get_tool_by_url_match($url, $courseid = null, $state = LTI_TOOL_STATE_CONFIGURED) {
