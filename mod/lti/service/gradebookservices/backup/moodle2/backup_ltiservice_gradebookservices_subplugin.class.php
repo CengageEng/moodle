@@ -53,64 +53,26 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // The lineitem(s) related with this element.
         $thisactivitylineitems = new backup_nested_element('thisactivitylineitems');
         $thisactivitylineitemslti2 = new backup_nested_element('thisactivitylineitemslti2');
+        $thisactivitylineitemlti2 = self::get_lti2_elements('coupled_grade_item_lti2');
+
         $thisactivitylineitemsltiad = new backup_nested_element('thisactivitylineitemsltiad');
-        $thisactivitylineitemlti2 = new backup_nested_element('coupled_grade_item_lti2', array('id'), array(
-                'categoryid', 'itemname', 'itemtype', 'itemmodule',
-                'iteminstance', 'itemnumber', 'iteminfo', 'idnumber',
-                'calculation', 'gradetype', 'grademax', 'grademin',
-                'scaleid', 'outcomeid', 'gradepass', 'multfactor',
-                'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride',
-                'sortorder', 'display', 'decimals', 'hidden', 'locked', 'locktime',
-                'needsupdate', 'timecreated', 'timemodified', 'toolproxyid', 'baseurl', 'tag', 'vendorcode', 'guid'));
-        $thisactivitylineitemltiad = new backup_nested_element('coupled_grade_item_ltiad', array('id'), array(
-                'categoryid', 'itemname', 'itemtype', 'itemmodule',
-                'iteminstance', 'itemnumber', 'iteminfo', 'idnumber',
-                'calculation', 'gradetype', 'grademax', 'grademin',
-                'scaleid', 'outcomeid', 'gradepass', 'multfactor',
-                'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride',
-                'sortorder', 'display', 'decimals', 'hidden', 'locked', 'locktime',
-                'needsupdate', 'timecreated', 'timemodified', 'typeid', 'baseurl', 'tag'));
+        $thisactivitylineitemltiad = self::get_ltiadvangage_elements('coupled_grade_item_ltiad');
 
         // The lineitem(s) not related with any activity.
         // TODO: This will need to change if this module becomes part of the moodle core.
         $nonactivitylineitems = new backup_nested_element('nonactivitylineitems');
         $nonactivitylineitemslti2 = new backup_nested_element('nonactivitylineitemslti2');
-        $nonactivitylineitemsltiad = new backup_nested_element('nonactivitylineitemsltiad');
-        $nonactivitylineitemlti2 = new backup_nested_element('uncoupled_grade_item_lti2', array('id'), array(
-                'categoryid', 'itemname', 'itemtype', 'itemmodule',
-                'iteminstance', 'itemnumber', 'iteminfo', 'idnumber',
-                'calculation', 'gradetype', 'grademax', 'grademin',
-                'scaleid', 'outcomeid', 'gradepass', 'multfactor',
-                'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride',
-                'sortorder', 'display', 'decimals', 'hidden', 'locked', 'locktime',
-                'needsupdate', 'timecreated', 'timemodified', 'toolproxyid', 'baseurl', 'tag', 'vendorcode', 'guid'));
+        $nonactivitylineitemlti2 = self::get_lti2_elements('uncoupled_grade_item_lti2');
 
-        $nonactivitylineitemltiad = new backup_nested_element('uncoupled_grade_item_ltiad', array('id'), array(
-                'categoryid', 'itemname', 'itemtype', 'itemmodule',
-                'iteminstance', 'itemnumber', 'iteminfo', 'idnumber',
-                'calculation', 'gradetype', 'grademax', 'grademin',
-                'scaleid', 'outcomeid', 'gradepass', 'multfactor',
-                'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride',
-                'sortorder', 'display', 'decimals', 'hidden', 'locked', 'locktime',
-                'needsupdate', 'timecreated', 'timemodified', 'typeid', 'baseurl', 'tag'));
+        $nonactivitylineitemsltiad = new backup_nested_element('nonactivitylineitemsltiad');
+        $nonactivitylineitemltiad = self::get_ltiadvangage_elements('uncoupled_grade_item_ltiad');
 
         // Grades.
         $gradegradeslti2 = new backup_nested_element('grade_grades_lti2');
-        $gradegradelti2 = new backup_nested_element('grade_grade_lti2', array('id'), array(
-                'itemid', 'userid', 'rawgrade', 'rawgrademax', 'rawgrademin',
-                'rawscaleid', 'usermodified', 'finalgrade', 'hidden',
-                'locked', 'locktime', 'exported', 'overridden',
-                'excluded', 'feedback', 'feedbackformat', 'information',
-                'informationformat', 'timecreated', 'timemodified',
-                'aggregationstatus', 'aggregationweight'));
+        $gradegradelti2 = self::get_lti2_grade_elements('grade_grade_lti2');
+
         $gradegradesltiad = new backup_nested_element('grade_grades_ltiad');
-        $gradegradeltiad = new backup_nested_element('grade_grade_ltiad', array('id'), array(
-                'itemid', 'userid', 'rawgrade', 'rawgrademax', 'rawgrademin',
-                'rawscaleid', 'usermodified', 'finalgrade', 'hidden',
-                'locked', 'locktime', 'exported', 'overridden',
-                'excluded', 'feedback', 'feedbackformat', 'information',
-                'informationformat', 'timecreated', 'timemodified',
-                'aggregationstatus', 'aggregationweight'));
+        $gradegradeltiad = self::get_ltiavantage_grade_elements('grade_grade_ltiad');
 
         // Build the tree.
         $subplugin->add_child($subpluginwrapper);
@@ -234,4 +196,69 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         return $subplugin;
     }
 
+    /**
+     * Merges and returns a list of common and LTI product specific element names.
+     *
+     * @param array $typeelements LTI product specific element names, LTI2 or LTI Advantage
+     * @return array
+     */
+    private function get_common_elements($typeelements) {
+        return array_merge(['categoryid', 'itemname', 'itemtype', 'itemmodule', 'iteminstance', 'itemnumber', 'iteminfo',
+            'idnumber', 'calculation', 'gradetype', 'grademax', 'grademin', 'scaleid', 'outcomeid', 'gradepass', 'multfactor',
+            'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride', 'sortorder', 'display', 'decimals',
+            'hidden', 'locked', 'locktime', 'needsupdate', 'timecreated', 'timemodified', 'baseurl', 'tag'], $typeelements);
+    }
+
+    /**
+     * Returns backup element containing LTI2 specific elements.
+     *
+     * @param $elementname
+     * @return backup_nested_element
+     */
+    private function get_lti2_elements($elementname) {
+        return new backup_nested_element($elementname, ['id'], self::get_common_elements(['toolproxyid', 'vendorcode', 'guid']));
+    }
+
+    /**
+     * Returns backup element containing LTI Advantage specific elements.
+     *
+     * @param $elementname
+     * @return backup_nested_element
+     */
+    private function get_ltiadvangage_elements($elementname) {
+        return new backup_nested_element($elementname, ['id'], self::get_common_elements(['typeid']));
+    }
+
+    /**
+     * Returns backup grade elements.
+     *
+     * @param string $elementname
+     * @return backup_nested_element
+     */
+    private function get_grade_elements($elementname) {
+        return new backup_nested_element($elementname, ['id'], [
+            'itemid', 'userid', 'rawgrade', 'rawgrademax', 'rawgrademin', 'rawscaleid', 'usermodified', 'finalgrade', 'hidden',
+            'locked', 'locktime', 'exported', 'overridden', 'excluded', 'feedback', 'feedbackformat', 'information',
+            'informationformat', 'timecreated', 'timemodified', 'aggregationstatus', 'aggregationweight']);
+    }
+
+    /**
+     * Returns backup grade element containing LTI2 specific elements.
+     *
+     * @param string $elementname
+     * @return backup_nested_element
+     */
+    private function get_lti2_grade_elements($elementname) {
+        return self::get_grade_elements($elementname);
+    }
+
+    /**
+     * Returns backup grade element containing LTI Advantage specific elements.
+     *
+     * @param string $elementname
+     * @return backup_nested_element
+     */
+    private function get_ltiavantage_grade_elements($elementname) {
+        return self::get_grade_elements($elementname);
+    }
 }

@@ -74,6 +74,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
      * Processes one coupled lineitem element
      * @param mixed $data
      * @return void
+     * @throws Exception
      */
     public function process_ltiservice_gradebookservices_coupledgradeitemlti2($data) {
         global $DB;
@@ -106,6 +107,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
             $oldgradeitemid = $this->get_mappingid('gbsgradeitemoldid', $newgbsid, 0);
         } catch (\Exception $e) {
             debugging('Error restoring the lti gradebookservicescreating: ' . $e->getTraceAsString());
+            throw $e;
         }
     }
 
@@ -113,6 +115,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
      * Processes one coupled lineitem element
      * @param mixed $data
      * @return void
+     * @throws Exception
      */
     public function process_ltiservice_gradebookservices_coupledgradeitemltiad($data) {
         global $DB;
@@ -144,6 +147,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
             $oldgradeitemid = $this->get_mappingid('gbsgradeitemoldid', $newgbsid, 0);
         } catch (\Exception $e) {
             debugging('Error restoring the lti gradebookservicescreating: ' . $e->getTraceAsString());
+            throw $e;
         }
     }
 
@@ -151,6 +155,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
      * Processes one uncoupled lineitem element
      * @param mixed $data
      * @return void
+     * @throws Exception
      */
     public function process_ltiservice_gradebookservices_uncoupledgradeitemlti2($data) {
         global $DB;
@@ -199,6 +204,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
             }
         } catch (\Exception $e) {
             debugging('Error restoring the lti gradebookservicescreating: ' . $e->getTraceAsString());
+            throw $e;
         }
     }
 
@@ -206,6 +212,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
      * Processes one uncoupled lineitem element
      * @param mixed $data
      * @return void
+     * @throws Exception
      */
     public function process_ltiservice_gradebookservices_uncoupledgradeitemltiad($data) {
         global $DB;
@@ -254,6 +261,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
             }
         } catch (\Exception $e) {
             debugging('Error restoring the lti gradebookservicescreating: ' . $e->getTraceAsString());
+            throw $e;
         }
     }
 

@@ -159,7 +159,7 @@ class mod_lti_edit_types_form extends moodleform {
         }
 
         $mform->addElement('text', 'lti_toolurl_ContentItemSelectionRequest',
-            get_string('toolurl_contentitemselectionrequest', 'lti'), array('size' => '64'));
+            get_string('toolurl_ContentItemSelectionRequest', 'lti'), array('size' => '64'));
         $mform->setType('lti_toolurl_ContentItemSelectionRequest', PARAM_URL);
         $mform->setAdvanced('lti_toolurl_ContentItemSelectionRequest');
         $mform->addHelpButton('lti_toolurl_ContentItemSelectionRequest', 'toolurl_ContentItemSelectionRequest', 'lti');

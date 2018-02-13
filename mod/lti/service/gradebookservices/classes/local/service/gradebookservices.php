@@ -554,6 +554,7 @@ class gradebookservices extends service_base {
      * This method will clean these orphans. It will happens based on a task
      * because it is not urgent and we don't want to slow the service
      *
+     * @throws \Exception
      */
     public static function delete_orphans_ltiservice_gradebookservices_rows() {
         global $DB;
@@ -568,6 +569,7 @@ class gradebookservices extends service_base {
             $DB->execute($sql);
         } catch (\Exception $e) {
             debugging("Error deleting orphan gradebook rows: ", $e);
+            throw $e;
         }
     }
 
