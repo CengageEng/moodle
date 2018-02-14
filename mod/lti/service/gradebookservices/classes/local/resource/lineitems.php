@@ -327,7 +327,7 @@ EOD;
             ));
         } catch (\Exception $ex) {
             debugging('Error adding an entry in ltiservice_gradebookservices:' . $ex->getMessage());
-            throw new \Exception(null, 500);
+            throw $e;
         }
         if (is_null($typeid)) {
             $json->id = parent::get_endpoint() . "/{$id}/lineitem";

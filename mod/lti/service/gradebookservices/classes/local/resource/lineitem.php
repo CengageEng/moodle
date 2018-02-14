@@ -260,27 +260,23 @@ class lineitem extends resource_base {
         $endpoint = $lineitem->get_endpoint();
 
         if ($upgradegradebookservices) {
-            try {
-                if (is_null($typeid)) {
-                    $toolproxyid = $this->get_service()->get_tool_proxy()->id;
-                    $baseurl = null;
-                } else {
-                    $toolproxyid = null;
-                    $baseurl = lti_get_type_type_config($typeid)->lti_toolurl;
-                }
-                $DB->update_record('ltiservice_gradebookservices', (object)array(
-                        'id' => $gbs->id,
-                        'gradeitemid' => $gbs->gradeitemid,
-                        'courseid' => $gbs->courseid,
-                        'toolproxyid' => $toolproxyid,
-                        'typeid' => $typeid,
-                        'baseurl' => $baseurl,
-                        'ltilinkid' => $item->iteminstance,
-                        'tag' => $gbs->tag
-                ));
-            } catch (\Exception $e) {
-                throw new \Exception(null, 500);
+            if (is_null($typeid)) {
+                $toolproxyid = $this->get_service()->get_tool_proxy()->id;
+                $baseurl = null;
+            } else {
+                $toolproxyid = null;
+                $baseurl = lti_get_type_type_config($typeid)->lti_toolurl;
             }
+            $DB->update_record('ltiservice_gradebookservices', (object)array(
+                    'id' => $gbs->id,
+                    'gradeitemid' => $gbs->gradeitemid,
+                    'courseid' => $gbs->courseid,
+                    'toolproxyid' => $toolproxyid,
+                    'typeid' => $typeid,
+                    'baseurl' => $baseurl,
+                    'ltilinkid' => $item->iteminstance,
+                    'tag' => $gbs->tag
+            ));
         }
 
         if (is_null($typeid)) {
