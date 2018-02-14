@@ -211,11 +211,7 @@ class gradebookservices extends service_base {
                       AND (i.itemmodule = :itemmodule)
                       {$optionalfilters}
                ORDER BY i.id";
-        try {
-            $lineitems = $DB->get_records_sql($sql, $params);
-        } catch (\Exception $e) {
-            throw new \Exception(null, 500);
-        }
+        $lineitems = $DB->get_records_sql($sql, $params);
 
         // For each one, check the gbs id, and check that toolproxy matches. If so, add the
         // tag to the result and add it to a final results array.
@@ -337,14 +333,11 @@ class gradebookservices extends service_base {
                 $params = array('courseid' => $courseid, 'itemid' => $itemid, 'typeid' => $typeid,
                         'gbsid' => $gbs->id);
             }
-            try {
-                $lineitem = $DB->get_records_sql($sql, $params);
-                if (count($lineitem) === 1) {
-                    $lineitem = reset($lineitem);
-                } else {
-                    $lineitem = false;
-                }
-            } catch (\Exception $e) {
+
+            $lineitem = $DB->get_records_sql($sql, $params);
+            if (count($lineitem) === 1) {
+                $lineitem = reset($lineitem);
+            } else {
                 $lineitem = false;
             }
         }
