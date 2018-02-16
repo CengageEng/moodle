@@ -216,35 +216,33 @@ class lineitem extends resource_base {
             }
             $gbs->tag = $tag;
         }
+        $ltilinkid = null;
         if (isset($json->ltiLinkId)) {
             if (is_numeric($json->ltiLinkId)) {
-                if (intval($item->iteminstance) !== intval($json->ltiLinkId)) {
-                    $updategradeitem = true;
-                    if ($gbs) {
+                $ltilinkid = $json->ltiLinkId;
+                if ($gbs) {
+                    if (intval($gbs->ltilinkid) !== intval($json->ltiLinkId)) {
+                        $gbs->ltilinkid = $json->ltiLinkId;
                         $upgradegradebookservices = true;
                     }
+                } else {
+                    if (intval($item->iteminstance) !== intval($json->ltiLinkId)) {
+                        $item->iteminstance = intval($json->ltiLinkId);
+                        $updategradeitem = true;
+                    }
                 }
-                $item->iteminstance = intval($json->ltiLinkId);
             } else {
                 throw new \Exception(null, 400);
             }
-        } else { // This should never happen if $gbs is false, but just in case let's avoid it.
-            if ($gbs) {
-                if ($item->iteminstance !== null) {
-                    $updategradeitem = true;
-                    $upgradegradebookservices = true;
-                }
-                $item->iteminstance = null;
-            }
         }
-        if ($item->iteminstance != null) {
+        if ($ltilinkid != null) {
             if (is_null($typeid)) {
-                if (!gradebookservices::check_lti_id($item->iteminstance, $item->courseid,
+                if (!gradebookservices::check_lti_id($ltilinkid, $item->courseid,
                         $this->get_service()->get_tool_proxy()->id)) {
                             throw new \Exception(null, 403);
                 }
             } else {
-                if (!gradebookservices::check_lti_1x_id($item->iteminstance, $item->courseid,
+                if (!gradebookservices::check_lti_1x_id($ltilinkid, $item->courseid,
                         $typeid)) {
                             throw new \Exception(null, 403);
                 }
@@ -274,7 +272,7 @@ class lineitem extends resource_base {
                     'toolproxyid' => $toolproxyid,
                     'typeid' => $typeid,
                     'baseurl' => $baseurl,
-                    'ltilinkid' => $item->iteminstance,
+                    'ltilinkid' => $ltilinkid,
                     'tag' => $gbs->tag
             ));
         }
@@ -299,7 +297,7 @@ class lineitem extends resource_base {
     private function delete_request($item) {
         global $DB;
 
-        $gradeitem = \grade_item::fetch(array('id' => $item->id, 'courseid' => $item->courseid));
+        $gradeitem = \grade_item::fetch(array('id' => $item->id));
         if (($gbs = gradebookservices::find_ltiservice_gradebookservice_for_lineitem($item->id)) == false) {
             throw new \Exception(null, 403);
         }

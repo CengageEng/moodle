@@ -98,15 +98,24 @@ class results extends resource_base {
             if (($item = $this->get_service()->get_lineitem($contextid, $itemid, $typeid)) === false) {
                 throw new \Exception(null, 403);
             }
-            if (is_null($typeid)) {
-                if (isset($item->iteminstance) && (!gradebookservices::check_lti_id($item->iteminstance, $item->courseid,
-                        $this->get_service()->get_tool_proxy()->id))) {
+            $gbs = gradebookservices::find_ltiservice_gradebookservice_for_lineitem($itemid);
+            $ltilinkid = null;
+            if (isset($item->iteminstance)) {
+                $ltilinkid = $item->iteminstance;
+            } else if ($gbs && isset($gbs->ltilinkid)) {
+                $ltilinkid = $gbs->ltilinkid;
+            }
+            if ($ltilinkid != null) {
+                if (is_null($typeid)) {
+                    if (isset($item->iteminstance) && (!gradebookservices::check_lti_id($ltilinkid, $item->courseid,
+                            $this->get_service()->get_tool_proxy()->id))) {
                             throw new \Exception(null, 403);
-                }
-            } else {
-                if (isset($item->iteminstance) && (!gradebookservices::check_lti_1x_id($item->iteminstance, $item->courseid,
-                        $typeid))) {
+                    }
+                } else {
+                    if (isset($item->iteminstance) && (!gradebookservices::check_lti_1x_id($ltilinkid, $item->courseid,
+                            $typeid))) {
                             throw new \Exception(null, 403);
+                    }
                 }
             }
             require_once($CFG->libdir.'/gradelib.php');
