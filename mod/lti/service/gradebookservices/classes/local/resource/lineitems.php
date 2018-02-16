@@ -308,8 +308,6 @@ EOD;
         $item = new \grade_item(array('id' => 0, 'courseid' => $contextid));
         \grade_item::set_properties($item, $params);
         $item->itemtype = 'manual';
-        //$item->itemmodule = 'lti';
-        //$item->itemnumber = get_next_itemnumber();
         $item->idnumber = $resourceid;
         if (isset($json->ltiLinkId) && is_numeric($json->ltiLinkId)) {
             $item->iteminstance = $json->ltiLinkId;

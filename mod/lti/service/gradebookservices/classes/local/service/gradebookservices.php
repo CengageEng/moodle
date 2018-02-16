@@ -317,8 +317,6 @@ class gradebookservices extends service_base {
                 return false;
             }
         } else {
-            //require_once('config.php');
-            //require_once($CFG->dirroot . '/lib/grade/grade_item.php');
             require_once($CFG->libdir . '/gradelib.php');
             $lineitem = \grade_item::fetch(array('id' => $itemid));
         }
@@ -336,37 +334,46 @@ class gradebookservices extends service_base {
      * @throws \Exception
      */
     public static function save_score($gradeitem, $score, $userid) {
-        global $DB;
+        global $DB, $CFG;
+        $source = 'mod' . self::SERVICE_NAME;
         if ($DB->get_record('user', array('id' => $userid)) === false) {
             throw new \Exception(null, 400);
         }
+        require_once($CFG->libdir . '/gradelib.php');
+        if (!$grade = \grade_grade::fetch(array('itemid' => $gradeitem->id, 'userid' => $userid))) {
+            $grade = new \grade_grade();
+            $grade->userid = $userid;
+            $grade->itemid = $gradeitem->id;
+        }
 
-        $rawgrade = false;
-        $dategraded = null;
         if (isset($score->scoreGiven)) {
-            $rawgrade = grade_floatval($score->scoreGiven);
+            $grade->finalgrade = grade_floatval($score->scoreGiven);
             $max = 1;
             if (isset($score->scoreMaximum)) {
                 $max = $score->scoreMaximum;
             }
             if (!is_null($max) && grade_floats_different($max, $gradeitem->grademax) && grade_floats_different($max, 0.0)) {
                 // rescale to match the grade item maximum
-                $rawgrade = grade_floatval($rawgrade * $gradeitem->grademax / $max);
+                $grade->finalgrade = grade_floatval($grade->finalgrade * $gradeitem->grademax / $max);
             }
             if (isset($score->timestamp)) {
-                $dategraded = strtotime($score->timestamp);
+                $grade->timemodified = strtotime($score->timestamp);
             } else {
-                $dategraded = time();
+                $grade->timemodified = time();
             }
         }
-        $feedback = false;
-        $feedbackformat = FORMAT_MOODLE;
+        $grade->feedbackformat = FORMAT_MOODLE;
         if (isset($score->comment) && !empty($score->comment)) {
-            $feedback = $score->comment;
-            $feedbackformat = FORMAT_PLAIN;
+            $grade->feedback = $score->comment;
+            $grade->feedbackformat = FORMAT_PLAIN;
         }
-        $status = $gradeitem->update_raw_grade($userid, $rawgrade, 'mod/ltiservice_gradebookservices', $feedback, $feedbackformat, null, $dategraded);
-        if (!$status) {
+
+        if (empty($grade->id)) {
+            $result = (bool)$grade->insert($source);
+        } else {
+            $result = $grade->update($source);
+        }
+        if (!$result) {
             debugging("failed to save score for item ".$gradeitem->id);
             throw new \Exception(null, 500);
         }
