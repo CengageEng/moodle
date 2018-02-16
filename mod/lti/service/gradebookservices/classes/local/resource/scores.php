@@ -158,40 +158,41 @@ class scores extends resource_base {
      * @throws \Exception
      */
     private function post_request_json($response, $body, $item, $contextid, $typeid) {
-        $result = json_decode($body);
-        if (empty($result) ||
-                !isset($result->userId) ||
-                !isset($result->timestamp) ||
-                !isset($result->gradingProgress) ||
-                !isset($result->activityProgress) ||
-                !isset($result->timestamp) ||
-                isset($result->timestamp) && !gradebookservices::validate_iso8601_date($result->timestamp) ||
-                (isset($result->scoreGiven) && !is_numeric($result->scoreGiven)) ||
-                (isset($result->scoreMaximum) && !is_numeric($result->scoreMaximum)) ||
-                (!gradebookservices::is_user_gradable_in_course($contextid, $result->userId))
+        $score = json_decode($body);
+        if (empty($score) ||
+                !isset($score->userId) ||
+                !isset($score->timestamp) ||
+                !isset($score->gradingProgress) ||
+                !isset($score->activityProgress) ||
+                !isset($score->timestamp) ||
+                isset($score->timestamp) && !gradebookservices::validate_iso8601_date($score->timestamp) ||
+                (isset($score->scoreGiven) && !is_numeric($score->scoreGiven)) ||
+                (isset($score->scoreMaximum) && !is_numeric($score->scoreMaximum)) ||
+                (!gradebookservices::is_user_gradable_in_course($contextid, $score->userId))
                 ) {
+            debugging('Incorrect score received'. $score);
             throw new \Exception(null, 400);
         }
-        $result->timemodified = intval($result->timestamp);
+        $score->timemodified = intval($score->timestamp);
 
-        if (!isset($result->scoreMaximum)) {
-            $result->scoreMaximum = 1;
+        if (!isset($score->scoreMaximum)) {
+            $score->scoreMaximum = 1;
         }
         $response->set_code(200);
-        $grade = \grade_grade::fetch(array('itemid' => $item->id, 'userid' => $result->userId));
+        $grade = \grade_grade::fetch(array('itemid' => $item->id, 'userid' => $score->userId));
         if ($grade &&  !empty($grade->timemodified)) {
-            if ($grade->timemodified >= strtotime($result->timestamp)) {
+            if ($grade->timemodified >= strtotime($score->timestamp)) {
                 throw new \Exception(null, 403);
             }
         }
-        if (isset($result->scoreGiven)) {
-            if ($result->gradingProgress == 'FullyGraded') {
-                gradebookservices::set_grade_item($item, $result, $result->userId, $typeid);
+        if (isset($score->scoreGiven)) {
+            if ($score->gradingProgress == 'FullyGraded') {
+                gradebookservices::save_score($item, $score, $score->userId, $typeid);
             } else {
-                $this->reset_result($item, $result->userId);
+                $this->reset_result($item, $score->userId);
             }
         } else {
-            $this->reset_result($item, $result->userId);
+            $this->reset_result($item, $score->userId);
         }
     }
 

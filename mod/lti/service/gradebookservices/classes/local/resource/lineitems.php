@@ -307,9 +307,7 @@ EOD;
         $params['grademin']  = 0;
         $item = new \grade_item(array('id' => 0, 'courseid' => $contextid));
         \grade_item::set_properties($item, $params);
-        $item->itemtype = 'mod';
-        $item->itemmodule = 'lti';
-        $item->itemnumber = get_next_itemnumber();
+        $item->itemtype = 'manual';
         $item->idnumber = $resourceid;
         if (isset($json->ltiLinkId) && is_numeric($json->ltiLinkId)) {
             $item->iteminstance = $json->ltiLinkId;
@@ -327,7 +325,7 @@ EOD;
             ));
         } catch (\Exception $ex) {
             debugging('Error adding an entry in ltiservice_gradebookservices:' . $ex->getMessage());
-            throw $e;
+            throw $ex;
         }
         if (is_null($typeid)) {
             $json->id = parent::get_endpoint() . "/{$id}/lineitem";
