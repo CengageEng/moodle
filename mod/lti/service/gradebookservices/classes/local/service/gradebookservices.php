@@ -33,6 +33,7 @@ use ltiservice_gradebookservices\local\resource\scores;
 use mod_lti\local\ltiservice\resource_base;
 use mod_lti\local\ltiservice\service_base;
 
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -281,11 +282,13 @@ class gradebookservices extends service_base {
      * @return \ltiservice_gradebookservices\local\resource\lineitem|bool
      */
     public function get_lineitem($courseid, $itemid, $typeid) {
-        global $DB;
+        global $DB, $CFG;
 
         $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($itemid);
         if (!$gbs) {
-            $lineitem = $DB->get_record('grade_items', array('id' => $itemid));
+            require_once('config.php');
+            require_once($CFG->libdir . '/gradelib.php');
+            $lineitem = new grade_item(array('id' => $itemid));
             // We will need to check if the activity related belongs to our tool proxy.
             $ltiactivity = $DB->get_record('lti', array('id' => $lineitem->iteminstance));
             if (($ltiactivity) && (isset($ltiactivity->typeid))) {
@@ -314,32 +317,10 @@ class gradebookservices extends service_base {
                 return false;
             }
         } else {
-            if (is_null($typeid)) {
-                $sql = "SELECT i.*,s.tag
-                          FROM {grade_items} i,{ltiservice_gradebookservices} s
-                         WHERE (i.courseid = :courseid)
-                               AND (i.id = :itemid)
-                               AND (s.id = :gbsid)
-                               AND (s.toolproxyid = :tpid)";
-                $params = array('courseid' => $courseid, 'itemid' => $itemid, 'tpid' => $this->get_tool_proxy()->id,
-                        'gbsid' => $gbs->id);
-            } else {
-                $sql = "SELECT i.*,s.tag
-                          FROM {grade_items} i,{ltiservice_gradebookservices} s
-                         WHERE (i.courseid = :courseid)
-                               AND (i.id = :itemid)
-                               AND (s.id = :gbsid)
-                               AND (s.typeid = :typeid)";
-                $params = array('courseid' => $courseid, 'itemid' => $itemid, 'typeid' => $typeid,
-                        'gbsid' => $gbs->id);
-            }
-
-            $lineitem = $DB->get_records_sql($sql, $params);
-            if (count($lineitem) === 1) {
-                $lineitem = reset($lineitem);
-            } else {
-                $lineitem = false;
-            }
+            //require_once('config.php');
+            //require_once($CFG->dirroot . '/lib/grade/grade_item.php');
+            require_once($CFG->libdir . '/gradelib.php');
+            $lineitem = \grade_item::fetch(array('id' => $itemid));
         }
         return $lineitem;
     }
@@ -349,46 +330,44 @@ class gradebookservices extends service_base {
      * Set a grade item.
      *
      * @param object $item Grade Item record
-     * @param object $result Result object
+     * @param object $score Result object
      * @param string $userid User ID
      *
      * @throws \Exception
      */
-    public static function set_grade_item($item, $result, $userid) {
+    public static function save_score($gradeitem, $score, $userid) {
         global $DB;
-
         if ($DB->get_record('user', array('id' => $userid)) === false) {
             throw new \Exception(null, 400);
         }
 
-        $grade = new \stdClass();
-        $grade->userid = $userid;
-        $grade->rawgrademin = grade_floatval(0);
-        $max = null;
-        if (isset($result->scoreGiven)) {
-            $grade->rawgrade = grade_floatval($result->scoreGiven);
-            if (isset($result->scoreMaximum)) {
-                $max = $result->scoreMaximum;
+        $rawgrade = false;
+        $dategraded = null;
+        if (isset($score->scoreGiven)) {
+            $rawgrade = grade_floatval($score->scoreGiven);
+            $max = 1;
+            if (isset($score->scoreMaximum)) {
+                $max = $score->scoreMaximum;
+            }
+            if (!is_null($max) && grade_floats_different($max, $gradeitem->grademax) && grade_floats_different($max, 0.0)) {
+                // rescale to match the grade item maximum
+                $rawgrade = grade_floatval($rawgrade * $gradeitem->grademax / $max);
+            }
+            if (isset($score->timestamp)) {
+                $dategraded = strtotime($score->timestamp);
+            } else {
+                $dategraded = time();
             }
         }
-        if (!is_null($max) && grade_floats_different($max, $item->grademax) && grade_floats_different($max, 0.0)) {
-            $grade->rawgrade = grade_floatval($grade->rawgrade * $item->grademax / $max);
+        $feedback = false;
+        $feedbackformat = FORMAT_MOODLE;
+        if (isset($score->comment) && !empty($score->comment)) {
+            $feedback = $score->comment;
+            $feedbackformat = FORMAT_PLAIN;
         }
-        if (isset($result->comment) && !empty($result->comment)) {
-            $grade->feedback = $result->comment;
-            $grade->feedbackformat = FORMAT_PLAIN;
-        } else {
-            $grade->feedback = false;
-            $grade->feedbackformat = FORMAT_MOODLE;
-        }
-        if (isset($result->timestamp)) {
-            $grade->timemodified = strtotime($result->timestamp);
-        } else {
-            $grade->timemodified = time();
-        }
-        $status = grade_update('mod/ltiservice_gradebookservices', $item->courseid, $item->itemtype, $item->itemmodule,
-                               $item->iteminstance, $item->itemnumber, $grade);
-        if ($status !== GRADE_UPDATE_OK) {
+        $status = $gradeitem->update_raw_grade($userid, $rawgrade, 'mod/ltiservice_gradebookservices', $feedback, $feedbackformat, null, $dategraded);
+        if (!$status) {
+            debugging("failed to save score for item ".$gradeitem->id);
             throw new \Exception(null, 500);
         }
 
