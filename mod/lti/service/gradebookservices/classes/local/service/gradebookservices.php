@@ -154,8 +154,13 @@ class gradebookservices extends service_base {
                         $conditions = array('courseid' => $courseid, 'itemtype' => 'mod',
                                 'itemmodule' => 'lti', 'iteminstance' => $modlti);
                         $numberoflineitems = $DB->count_records('grade_items', $conditions);
-                        if ($numberoflineitems == 1) {
+                        $conditionsgbs = array('courseid' => $courseid, 'ltilinkid' => $modlti);
+                        $numberoflineitemsgbs = $DB->count_records('ltiservice_gradebookservices', $conditionsgbs);
+                        if ($numberoflineitems + $numberoflineitemsgbs == 1) {
                             $id = $DB->get_field('grade_items', 'id', $conditions);
+                            if (!$id) {
+                                $id = $DB->get_field('ltiservice_gradebookservices', 'gradeitemid', $conditionsgbs);
+                            }
                         } else {
                             $id = null;
                         }
@@ -209,10 +214,8 @@ class gradebookservices extends service_base {
         if ($lineitems) {
             foreach ($lineitems as $lineitem) {
                 $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($lineitem->id);
-                if ($gbs && (!isset($tag) || (isset($tag) && $gbs->tag == $tag)) 
+                if ($gbs && (!isset($tag) || (isset($tag) && $gbs->tag == $tag))
                         && (!isset($ltilinkid) || (isset($ltilinkid) && $gbs->ltilinkid == $ltilinkid))) {
-                            error_log("GBS");
-                            error_log(print_r($lineitem));
                     if (is_null($typeid)) {
                         if ($this->get_tool_proxy()->id == $gbs->toolproxyid) {
                             $lineitem->tag = $gbs->tag;
@@ -224,10 +227,8 @@ class gradebookservices extends service_base {
                             array_push($lineitemstoreturn, $lineitem);
                         }
                     }
-                } elseif (($lineitem->itemtype == 'mod') && ($lineitem->itemmodule == 'lti')&& (!isset($tag) && 
+                } else if (($lineitem->itemtype == 'mod') && ($lineitem->itemmodule == 'lti')&& (!isset($tag) &&
                         (!isset($ltilinkid) || (isset($ltilinkid) && $lineitem->iteminstance == $ltilinkid)))) {
-                            error_log("NO GBS");
-                            error_log(print_r($lineitem));
                     // We will need to check if the activity related belongs to our tool proxy.
                     $ltiactivity = $DB->get_record('lti', array('id' => $lineitem->iteminstance));
                     if (($ltiactivity) && (isset($ltiactivity->typeid))) {
@@ -343,7 +344,7 @@ class gradebookservices extends service_base {
                 $max = $score->scoreMaximum;
             }
             if (!is_null($max) && grade_floats_different($max, $gradeitem->grademax) && grade_floats_different($max, 0.0)) {
-                // rescale to match the grade item maximum
+                // Rescale to match the grade item maximum.
                 $finalgrade = grade_floatval($finalgrade * $gradeitem->grademax / $max);
             }
             if (isset($score->timestamp)) {
@@ -366,6 +367,7 @@ class gradebookservices extends service_base {
                 $grade->itemid = $gradeitem->id;
             }
             $grade->finalgrade = $finalgrade;
+            $grade->rawgrademax = $score->scoreMaximum;
             $grade->timemodified = $timemodified;
             $grade->feedbackformat = $feedbackformat;
             $grade->feedback = $feedback;
@@ -403,11 +405,18 @@ class gradebookservices extends service_base {
         }
         $lineitem->id = "{$endpoint}/{$item->id}/lineitem" . $typeidstring;
         $lineitem->label = $item->itemname;
-        $lineitem->scoreMaximum = intval($item->grademax); // TODO: is int correct?!?
+        $lineitem->scoreMaximum = floatval($item->grademax);
         $lineitem->resourceId = (!empty($item->idnumber)) ? $item->idnumber : '';
-        $lineitem->tag = (!empty($item->tag)) ? $item->tag : '';
-        if (isset($item->iteminstance)) {
-            $lineitem->ltiLinkId = strval($item->iteminstance);
+        $gbs = self::find_ltiservice_gradebookservice_for_lineitem($item->id);
+        if ($gbs) {
+            $lineitem->tag = (!empty($gbs->tag)) ? $gbs->tag : '';
+            if (isset($gbs->ltilinkid)) {
+                $lineitem->ltiLinkId = strval($gbs->ltilinkid);
+            }
+        } else {
+            if (isset($item->iteminstance)) {
+                $lineitem->ltiLinkId = strval($item->iteminstance);
+            }
         }
         $json = json_encode($lineitem, JSON_UNESCAPED_SLASHES);
 
@@ -435,8 +444,8 @@ class gradebookservices extends service_base {
         $result->id = $id;
         $result->userId = $grade->userid;
         if (!empty($grade->finalgrade)) {
-            $result->resultScore = $grade->finalgrade;
-            $result->resultMaximum = intval($grade->rawgrademax);
+            $result->resultScore = floatval($grade->finalgrade);
+            $result->resultMaximum = floatval($grade->rawgrademax);
             if (!empty($grade->feedback)) {
                 $result->comment = $grade->feedback;
             }
