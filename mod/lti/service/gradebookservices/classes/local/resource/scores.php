@@ -186,36 +186,11 @@ class scores extends resource_base {
             }
         }
         if (isset($score->scoreGiven)) {
-            if ($score->gradingProgress == 'FullyGraded') {
-                gradebookservices::save_score($item, $score, $score->userId, $typeid);
-            } else {
-                $this->reset_result($item, $score->userId);
+            if ($score->gradingProgress != 'FullyGraded') {
+                $score->scoreGiven = null;
             }
-        } else {
-            $this->reset_result($item, $score->userId);
         }
-    }
-
-    /**
-     * Reset a Result.
-     *
-     * @param object $item Lineitem instance
-     * @param string $userid User ID
-     *
-     * @throws \Exception
-     */
-    private function reset_result($item, $userid) {
-
-        $grade = new \stdClass();
-        $grade->userid = $userid;
-        $grade->rawgrade = null;
-        $grade->feedback = null;
-        $grade->feedbackformat = FORMAT_MOODLE;
-        $status = grade_update('mod/ltiservice_gradebookservices', $item->courseid, $item->itemtype, $item->itemmodule,
-                $item->iteminstance, $item->itemnumber, $grade);
-        if ($status !== GRADE_UPDATE_OK) {
-            throw new \Exception(null, 500);
-        }
+        gradebookservices::save_score($item, $score, $score->userId, $typeid);
 
     }
 
