@@ -340,38 +340,48 @@ class gradebookservices extends service_base {
             throw new \Exception(null, 400);
         }
         require_once($CFG->libdir . '/gradelib.php');
-        if (!$grade = \grade_grade::fetch(array('itemid' => $gradeitem->id, 'userid' => $userid))) {
-            $grade = new \grade_grade();
-            $grade->userid = $userid;
-            $grade->itemid = $gradeitem->id;
-        }
-
+        $finalgrade = null;
+        $timemodified = null;
         if (isset($score->scoreGiven)) {
-            $grade->finalgrade = grade_floatval($score->scoreGiven);
+            $finalgrade = grade_floatval($score->scoreGiven);
             $max = 1;
             if (isset($score->scoreMaximum)) {
                 $max = $score->scoreMaximum;
             }
             if (!is_null($max) && grade_floats_different($max, $gradeitem->grademax) && grade_floats_different($max, 0.0)) {
                 // rescale to match the grade item maximum
-                $grade->finalgrade = grade_floatval($grade->finalgrade * $gradeitem->grademax / $max);
+                $finalgrade = grade_floatval($finalgrade * $gradeitem->grademax / $max);
             }
             if (isset($score->timestamp)) {
-                $grade->timemodified = strtotime($score->timestamp);
+                $timemodified = strtotime($score->timestamp);
             } else {
-                $grade->timemodified = time();
+                $timemodified = time();
             }
         }
-        $grade->feedbackformat = FORMAT_MOODLE;
+        $feedbackformat = FORMAT_MOODLE;
+        $feedback = null;
         if (isset($score->comment) && !empty($score->comment)) {
-            $grade->feedback = $score->comment;
-            $grade->feedbackformat = FORMAT_PLAIN;
+            $feedback = $score->comment;
+            $feedbackformat = FORMAT_PLAIN;
         }
 
-        if (empty($grade->id)) {
-            $result = (bool)$grade->insert($source);
+        if ($gradeitem->is_manual_item()) {
+            if (!$grade = \grade_grade::fetch(array('itemid' => $gradeitem->id, 'userid' => $userid))) {
+                $grade = new \grade_grade();
+                $grade->userid = $userid;
+                $grade->itemid = $gradeitem->id;
+            }
+            $grade->finalgrade = $finalgrade;
+            $grade->timemodified = $timemodified;
+            $grade->feedbackformat = $feedbackformat;
+            $grade->feedback = $feedback;
+            if (empty($grade->id)) {
+                $result = (bool)$grade->insert($source);
+            } else {
+                $result = $grade->update($source);
+            }
         } else {
-            $result = $grade->update($source);
+            $result = $gradeitem->update_raw_grade($userid, $finalgrade, $source, $feedback, $feedbackformat, null, $timemodified);
         }
         if (!$result) {
             debugging("failed to save score for item ".$gradeitem->id);
