@@ -188,28 +188,16 @@ class gradebookservices extends service_base {
         global $DB;
 
         // Select all lti potential linetiems in site.
-        $params = array('courseid' => $courseid, 'itemtype' => 'mod', 'itemmodule' => 'lti');
+        $params = array('courseid' => $courseid);
 
         $optionalfilters = "";
         if (isset($resourceid)) {
             $optionalfilters .= " AND (i.idnumber = :resourceid)";
             $params['resourceid'] = $resourceid;
         }
-        if (isset($ltilinkid)) {
-            $optionalfilters .= " AND (i.iteminstance = :ltilinkid)";
-            $params['ltilinkid'] = $ltilinkid;
-        }
-        if (isset($tag)) {
-            $optionalfilters .= " AND (s.tag = :tag)";
-            $params['tag'] = $tag;
-        }
-
-        $sql = "SELECT i.*, s.tag
+        $sql = "SELECT i.*
                   FROM {grade_items} i
-             LEFT JOIN {ltiservice_gradebookservices} s ON (i.id = s.gradeitemid AND i.courseid = s.courseid)
                  WHERE (i.courseid = :courseid)
-                      AND (i.itemtype = :itemtype)
-                      AND (i.itemmodule = :itemmodule)
                       {$optionalfilters}
                ORDER BY i.id";
         $lineitems = $DB->get_records_sql($sql, $params);
@@ -221,7 +209,10 @@ class gradebookservices extends service_base {
         if ($lineitems) {
             foreach ($lineitems as $lineitem) {
                 $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($lineitem->id);
-                if ($gbs) {
+                if ($gbs && (!isset($tag) || (isset($tag) && $gbs->tag == $tag)) 
+                        && (!isset($ltilinkid) || (isset($ltilinkid) && $gbs->ltilinkid == $ltilinkid))) {
+                            error_log("GBS");
+                            error_log(print_r($lineitem));
                     if (is_null($typeid)) {
                         if ($this->get_tool_proxy()->id == $gbs->toolproxyid) {
                             $lineitem->tag = $gbs->tag;
@@ -233,7 +224,10 @@ class gradebookservices extends service_base {
                             array_push($lineitemstoreturn, $lineitem);
                         }
                     }
-                } else {
+                } elseif (($lineitem->itemtype == 'mod') && ($lineitem->itemmodule == 'lti')&& (!isset($tag) && 
+                        (!isset($ltilinkid) || (isset($ltilinkid) && $lineitem->iteminstance == $ltilinkid)))) {
+                            error_log("NO GBS");
+                            error_log(print_r($lineitem));
                     // We will need to check if the activity related belongs to our tool proxy.
                     $ltiactivity = $DB->get_record('lti', array('id' => $lineitem->iteminstance));
                     if (($ltiactivity) && (isset($ltiactivity->typeid))) {

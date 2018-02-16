@@ -309,9 +309,9 @@ EOD;
         \grade_item::set_properties($item, $params);
         $item->itemtype = 'manual';
         $item->idnumber = $resourceid;
-        if (isset($json->ltiLinkId) && is_numeric($json->ltiLinkId)) {
-            $item->iteminstance = $json->ltiLinkId;
-        }
+        //if (isset($json->ltiLinkId) && is_numeric($json->ltiLinkId)) {
+        //    $item->iteminstance = $json->ltiLinkId;
+        //}
         $id = $item->insert('mod/ltiservice_gradebookservices');
         try {
             $DB->insert_record('ltiservice_gradebookservices', (object)array(
