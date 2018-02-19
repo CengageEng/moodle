@@ -191,7 +191,8 @@ class scores extends resource_base {
         $grade = \grade_grade::fetch(array('itemid' => $item->id, 'userid' => $score->userId));
         if ($grade &&  !empty($grade->timemodified)) {
             if ($grade->timemodified >= strtotime($score->timestamp)) {
-                throw new \Exception(null, 403);
+                debugging("Refusing score with an earlier timestamp for item ".$item->id." and user ".$score->userId);
+                throw new \Exception(null, 409);
             }
         }
         if (isset($score->scoreGiven)) {
