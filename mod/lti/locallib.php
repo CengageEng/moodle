@@ -886,9 +886,6 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
     if (empty($items)) {
         throw new moodle_exception('errorinvaliddata', 'mod_lti', '', $contentitemsjson);
     }
-    if ($items->{'@context'} !== 'http://purl.imsglobal.org/ctx/lti/v1/ContentItem') {
-        throw new moodle_exception('errorinvalidmediatype', 'mod_lti', '', $items->{'@context'});
-    }
     if (!isset($items->{'@graph'}) || !is_array($items->{'@graph'}) || (count($items->{'@graph'}) > 1)) {
         throw new moodle_exception('errorinvalidresponseformat', 'mod_lti');
     }
