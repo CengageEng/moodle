@@ -50,70 +50,27 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // Create XML elements.
         $subplugin = $this->get_subplugin_element();
         $subpluginwrapper = new backup_nested_element($this->get_recommended_name());
-        // The lineitem(s) related with this element.
-        $thisactivitylineitems = new backup_nested_element('thisactivitylineitems');
-        $thisactivitylineitemslti2 = new backup_nested_element('thisactivitylineitemslti2');
-        $thisactivitylineitemlti2 = self::get_lti2_elements('coupled_grade_item_lti2');
-
-        $thisactivitylineitemsltiad = new backup_nested_element('thisactivitylineitemsltiad');
-        $thisactivitylineitemltiad = self::get_ltiadvangage_elements('coupled_grade_item_ltiad');
-
-        // The lineitem(s) not related with any activity.
-        // TODO: This will need to change if this module becomes part of the moodle core.
-        $nonactivitylineitems = new backup_nested_element('nonactivitylineitems');
-        $nonactivitylineitemslti2 = new backup_nested_element('nonactivitylineitemslti2');
-        $nonactivitylineitemlti2 = self::get_lti2_elements('uncoupled_grade_item_lti2');
-
-        $nonactivitylineitemsltiad = new backup_nested_element('nonactivitylineitemsltiad');
-        $nonactivitylineitemltiad = self::get_ltiadvangage_elements('uncoupled_grade_item_ltiad');
-
-        // Grades.
-        $gradegradeslti2 = new backup_nested_element('grade_grades_lti2');
-        $gradegradelti2 = self::get_lti2_grade_elements('grade_grade_lti2');
-
-        $gradegradesltiad = new backup_nested_element('grade_grades_ltiad');
-        $gradegradeltiad = self::get_ltiavantage_grade_elements('grade_grade_ltiad');
+        // The gbs entries related with this element.
+        $lineitems = new backup_nested_element('lineitems');
+        $lineitem = new backup_nested_element('lineitem', array('id'), array(
+                'gradeitemid',
+                'courseid',
+                'toolproxyid',
+                'typeid',
+                'baseurl',
+                'ltilinkid',
+                'tag',
+                'vendorcode',
+                'guid'
+                )
+        );
 
         // Build the tree.
         $subplugin->add_child($subpluginwrapper);
-        $subpluginwrapper->add_child($thisactivitylineitems);
-        $thisactivitylineitems->add_child($thisactivitylineitemslti2);
-        $thisactivitylineitemslti2->add_child($thisactivitylineitemlti2);
-        $thisactivitylineitems->add_child($thisactivitylineitemsltiad);
-        $thisactivitylineitemsltiad->add_child($thisactivitylineitemltiad);
+        $subpluginwrapper->add_child($lineitems);
+        $lineitems->add_child($lineitem);
 
-        $subpluginwrapper->add_child($nonactivitylineitems);
-        $nonactivitylineitems->add_child($nonactivitylineitemslti2);
-        $nonactivitylineitemslti2->add_child($nonactivitylineitemlti2);
-        $nonactivitylineitemlti2->add_child($gradegradeslti2);
-        $gradegradeslti2->add_child($gradegradelti2);
-        $nonactivitylineitems->add_child($nonactivitylineitemsltiad);
-        $nonactivitylineitemsltiad->add_child($nonactivitylineitemltiad);
-        $nonactivitylineitemltiad->add_child($gradegradesltiad);
-        $gradegradesltiad->add_child($gradegradeltiad);
-
-        // Define sources.
-        $thisactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
-                                           FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
-                                                                                    AND g.courseid = l.courseid)
-                                     INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
-                                          WHERE g.courseid = ?
-                                                AND g.itemtype='mod'
-                                                AND g.itemmodule = 'lti'
-                                                AND g.iteminstance = ?
-                                                AND l.typeid is null";
-        $thisactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
-                                            FROM {grade_items} g
-                                      INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
-                                                                                     AND g.courseid = l.courseid)
-                                      INNER JOIN {lti_types} t ON (t.id = l.typeid)
-                                           WHERE g.courseid = ?
-                                             AND g.itemtype='mod'
-                                             AND g.itemmodule = 'lti'
-                                             AND g.iteminstance = ?
-                                             AND l.toolproxyid is null";
-
+        // We need to know the actual activity tool or toolproxy.
         // If and activity is assigned to a type that doesn't exists we don't want to backup any related lineitems.``
         // Default to invalid condition.
         $typeid = 0;
@@ -127,7 +84,6 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         $activitycourseid = $activitytask->get_courseid();
         $lti = $DB->get_record('lti', ['id' => $activityid], 'typeid, toolurl, securetoolurl');
         $ltitype = $DB->get_record('lti_types', ['id' => $lti->typeid], 'toolproxyid, baseurl');
-
         if ($ltitype) {
             $typeid = $lti->typeid;
             $toolproxyid = $ltitype->toolproxyid;
@@ -155,110 +111,26 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
                 }
             }
         }
-        $nonactivitylineitemslti2sql = "SELECT g.*,l.toolproxyid,l.baseurl,l.tag,t.vendorcode,t.guid
-                                          FROM {grade_items} g
-                                    INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
-                                                                                   AND g.courseid = l.courseid)
-                                    INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
-                                         WHERE g.courseid = ?
-                                               AND g.itemtype='mod'
-                                               AND g.itemmodule = 'lti'
-                                               AND g.iteminstance is null
-                                               AND l.typeid is null
-                                               AND l.toolproxyid = ?";
-        $nonactivitylineitemsltiadsql = "SELECT g.*,l.typeid,l.baseurl,l.tag
-                                           FROM {grade_items} g
-                                     INNER JOIN {ltiservice_gradebookservices} l ON (g.id = l.gradeitemid
-                                                                                    AND g.courseid = l.courseid)
-                                     INNER JOIN {lti_types} t ON (t.id = l.typeid)
-                                          WHERE g.courseid = ?
-                                                AND g.itemtype='mod'
-                                                AND g.itemmodule = 'lti'
-                                                AND g.iteminstance is null
-                                                AND l.typeid = ?
-                                                AND l.baseurl = ?
-                                                AND l.toolproxyid is null";
 
-        $thisactivitylineitemsparams = ['courseid' => backup::VAR_COURSEID, 'iteminstance' => backup::VAR_ACTIVITYID];
-        $thisactivitylineitemlti2->set_source_sql($thisactivitylineitemslti2sql, $thisactivitylineitemsparams);
-        $thisactivitylineitemltiad->set_source_sql($thisactivitylineitemsltiadsql, $thisactivitylineitemsparams);
-        $nonactivitylineitemslti2params = [backup::VAR_COURSEID, backup_helper::is_sqlparam($toolproxyid)];
-        $nonactivitylineitemsltiadparams = [backup::VAR_COURSEID,
-                backup_helper::is_sqlparam($typeid), backup_helper::is_sqlparam($baseurl)];
-        $nonactivitylineitemlti2->set_source_sql($nonactivitylineitemslti2sql, $nonactivitylineitemslti2params);
-        $nonactivitylineitemltiad->set_source_sql($nonactivitylineitemsltiadsql, $nonactivitylineitemsltiadparams);
-
-        if ($userinfo) {
-            $gradegradelti2->set_source_table('grade_grades', ['itemid' => backup::VAR_PARENTID]);
-            $gradegradeltiad->set_source_table('grade_grades', ['itemid' => backup::VAR_PARENTID]);
+        // Define sources.
+        if ($toolproxyid != null) {
+            $lineitemssql = "SELECT l.*, t.vendorcode as vendorcode, t.guid as guid
+                                              FROM {ltiservice_gradebookservices} l
+                                        INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
+                                             WHERE l.courseid = ?
+                                               AND l.toolproxyid = ?
+                                               AND l.typeid is null";
+            $lineitemsparams = ['courseid' => backup::VAR_COURSEID, backup_helper::is_sqlparam($toolproxyid)];
+        } else {
+            $lineitemssql = "SELECT l.*, null as vendorcode, null as guid
+                                             FROM {ltiservice_gradebookservices} l
+                                            WHERE l.courseid = ?
+                                              AND l.typeid = ?
+                                              AND l.toolproxyid is null";
+            $lineitemsparams = ['courseid' => backup::VAR_COURSEID, backup_helper::is_sqlparam($typeid)];
         }
+        $lineitem->set_source_sql($lineitemssql, $lineitemsparams);
 
         return $subplugin;
-    }
-
-    /**
-     * Merges and returns a list of common and LTI product specific element names.
-     *
-     * @param array $typeelements LTI product specific element names, LTI2 or LTI Advantage
-     * @return array
-     */
-    private function get_common_elements($typeelements) {
-        return array_merge(['categoryid', 'itemname', 'itemtype', 'itemmodule', 'iteminstance', 'itemnumber', 'iteminfo',
-            'idnumber', 'calculation', 'gradetype', 'grademax', 'grademin', 'scaleid', 'outcomeid', 'gradepass', 'multfactor',
-            'plusfactor', 'aggregationcoef', 'aggregationcoef2', 'weightoverride', 'sortorder', 'display', 'decimals',
-            'hidden', 'locked', 'locktime', 'needsupdate', 'timecreated', 'timemodified', 'baseurl', 'tag'], $typeelements);
-    }
-
-    /**
-     * Returns backup element containing LTI2 specific elements.
-     *
-     * @param $elementname
-     * @return backup_nested_element
-     */
-    private function get_lti2_elements($elementname) {
-        return new backup_nested_element($elementname, ['id'], self::get_common_elements(['toolproxyid', 'vendorcode', 'guid']));
-    }
-
-    /**
-     * Returns backup element containing LTI Advantage specific elements.
-     *
-     * @param $elementname
-     * @return backup_nested_element
-     */
-    private function get_ltiadvangage_elements($elementname) {
-        return new backup_nested_element($elementname, ['id'], self::get_common_elements(['typeid']));
-    }
-
-    /**
-     * Returns backup grade elements.
-     *
-     * @param string $elementname
-     * @return backup_nested_element
-     */
-    private function get_grade_elements($elementname) {
-        return new backup_nested_element($elementname, ['id'], [
-            'itemid', 'userid', 'rawgrade', 'rawgrademax', 'rawgrademin', 'rawscaleid', 'usermodified', 'finalgrade', 'hidden',
-            'locked', 'locktime', 'exported', 'overridden', 'excluded', 'feedback', 'feedbackformat', 'information',
-            'informationformat', 'timecreated', 'timemodified', 'aggregationstatus', 'aggregationweight']);
-    }
-
-    /**
-     * Returns backup grade element containing LTI2 specific elements.
-     *
-     * @param string $elementname
-     * @return backup_nested_element
-     */
-    private function get_lti2_grade_elements($elementname) {
-        return self::get_grade_elements($elementname);
-    }
-
-    /**
-     * Returns backup grade element containing LTI Advantage specific elements.
-     *
-     * @param string $elementname
-     * @return backup_nested_element
-     */
-    private function get_ltiavantage_grade_elements($elementname) {
-        return self::get_grade_elements($elementname);
     }
 }
