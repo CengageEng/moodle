@@ -85,6 +85,11 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
         } else {
             $newtoolproxyid = null;
         }
+        if ($data->ltilinkid != null) {
+            $ltilinkid = $this->get_new_parentid('lti');
+        } else {
+            $ltilinkid = null;
+        }
         // If this has not been restored before.
         if ($this->get_mappingid('gbsgradeitemrestored',  $data->id, 0) == 0) {
             try {
@@ -92,7 +97,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
                         'gradeitemid' => 0,
                         'courseid' => $courseid,
                         'toolproxyid' => $newtoolproxyid,
-                        'ltilinkid' => $this->get_new_parentid('lti'),
+                        'ltilinkid' => $ltilinkid,
                         'typeid' => $newtypeid,
                         'baseurl' => $data->baseurl,
                         'tag' => $data->tag

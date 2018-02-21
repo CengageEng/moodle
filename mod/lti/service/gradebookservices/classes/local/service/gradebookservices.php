@@ -218,12 +218,10 @@ class gradebookservices extends service_base {
                         && (!isset($ltilinkid) || (isset($ltilinkid) && $gbs->ltilinkid == $ltilinkid))) {
                     if (is_null($typeid)) {
                         if ($this->get_tool_proxy()->id == $gbs->toolproxyid) {
-                            $lineitem->tag = $gbs->tag;
                             array_push($lineitemstoreturn, $lineitem);
                         }
                     } else {
                         if ($typeid == $gbs->typeid) {
-                            $lineitem->tag = $gbs->tag;
                             array_push($lineitemstoreturn, $lineitem);
                         }
                     }
@@ -242,12 +240,10 @@ class gradebookservices extends service_base {
                         }
                         if (is_null($typeid)) {
                             if (($tool) && ($this->get_tool_proxy()->id == $tool->toolproxyid)) {
-                                $lineitem->tag = null;
                                 array_push($lineitemstoreturn, $lineitem);
                             }
                         } else {
                             if (($tool) && ($tool->id == $typeid)) {
-                                $lineitem->tag = null;
                                 array_push($lineitemstoreturn, $lineitem);
                             }
                         }
@@ -296,15 +292,11 @@ class gradebookservices extends service_base {
                         }
                     }
                     if (is_null($typeid)) {
-                        if (($tool) && ($this->get_tool_proxy()->id == $tool->toolproxyid)) {
-                            $lineitem->tag = null;
-                        } else {
+                        if (!(($tool) && ($this->get_tool_proxy()->id == $tool->toolproxyid))) {
                             return false;
                         }
                     } else {
-                        if (($tool) && ($tool->id == $typeid)) {
-                            $lineitem->tag = null;
-                        } else {
+                        if (!(($tool) && ($tool->id == $typeid))) {
                             return false;
                         }
                     }
@@ -376,9 +368,9 @@ class gradebookservices extends service_base {
             }
         } else {
             $grade->rawgrade = $finalgrade;
-            $status = \grade_update($source, $gradeitem->courseid, 
-                         $gradeitem->itemtype, $gradeitem->itemmodule, 
-                         $gradeitem->iteminstance, $gradeitem->itemnumber, 
+            $status = \grade_update($source, $gradeitem->courseid,
+                         $gradeitem->itemtype, $gradeitem->itemmodule,
+                         $gradeitem->iteminstance, $gradeitem->itemnumber,
                          $grade);
 
             $result = ($status == GRADE_UPDATE_OK);
@@ -418,6 +410,7 @@ class gradebookservices extends service_base {
                 $lineitem->ltiLinkId = strval($gbs->ltilinkid);
             }
         } else {
+            $lineitem->tag = '';
             if (isset($item->iteminstance)) {
                 $lineitem->ltiLinkId = strval($item->iteminstance);
             }
