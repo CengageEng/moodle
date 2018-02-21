@@ -279,41 +279,39 @@ class gradebookservices extends service_base {
     public function get_lineitem($courseid, $itemid, $typeid) {
         global $DB, $CFG;
 
-        $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($itemid);
-        if (!$gbs) {
-            require_once('config.php');
-            require_once($CFG->libdir . '/gradelib.php');
-            $lineitem = new grade_item(array('id' => $itemid));
-            // We will need to check if the activity related belongs to our tool proxy.
-            $ltiactivity = $DB->get_record('lti', array('id' => $lineitem->iteminstance));
-            if (($ltiactivity) && (isset($ltiactivity->typeid))) {
-                if ($ltiactivity->typeid != 0) {
-                    $tool = $DB->get_record('lti_types', array('id' => $ltiactivity->typeid));
-                } else {
-                    $tool = lti_get_tool_by_url_match($ltiactivity->toolurl, $courseid);
-                    if (!$tool) {
-                        $tool = lti_get_tool_by_url_match($ltiactivity->securetoolurl, $courseid);
-                    }
-                }
-                if (is_null($typeid)) {
-                    if (($tool) && ($this->get_tool_proxy()->id == $tool->toolproxyid)) {
-                        $lineitem->tag = null;
+        require_once($CFG->libdir . '/gradelib.php');
+        $lineitem = \grade_item::fetch(array('id' => $itemid));
+        if ($lineitem) {
+            $gbs = $this->find_ltiservice_gradebookservice_for_lineitem($itemid);
+            if (!$gbs) {
+                // We will need to check if the activity related belongs to our tool proxy.
+                $ltiactivity = $DB->get_record('lti', array('id' => $lineitem->iteminstance));
+                if (($ltiactivity) && (isset($ltiactivity->typeid))) {
+                    if ($ltiactivity->typeid != 0) {
+                        $tool = $DB->get_record('lti_types', array('id' => $ltiactivity->typeid));
                     } else {
-                         return false;
+                        $tool = lti_get_tool_by_url_match($ltiactivity->toolurl, $courseid);
+                        if (!$tool) {
+                            $tool = lti_get_tool_by_url_match($ltiactivity->securetoolurl, $courseid);
+                        }
+                    }
+                    if (is_null($typeid)) {
+                        if (($tool) && ($this->get_tool_proxy()->id == $tool->toolproxyid)) {
+                            $lineitem->tag = null;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        if (($tool) && ($tool->id == $typeid)) {
+                            $lineitem->tag = null;
+                        } else {
+                            return false;
+                        }
                     }
                 } else {
-                    if (($tool) && ($tool->id == $typeid)) {
-                        $lineitem->tag = null;
-                    } else {
-                        return false;
-                    }
+                    return false;
                 }
-            } else {
-                return false;
             }
-        } else {
-            require_once($CFG->libdir . '/gradelib.php');
-            $lineitem = \grade_item::fetch(array('id' => $itemid));
         }
         return $lineitem;
     }
@@ -360,27 +358,33 @@ class gradebookservices extends service_base {
             $feedbackformat = FORMAT_PLAIN;
         }
 
+        if (!$grade = \grade_grade::fetch(array('itemid' => $gradeitem->id, 'userid' => $userid))) {
+            $grade = new \grade_grade();
+            $grade->userid = $userid;
+            $grade->itemid = $gradeitem->id;
+        }
+        $grade->rawgrademax = $score->scoreMaximum;
+        $grade->timemodified = $timemodified;
+        $grade->feedbackformat = $feedbackformat;
+        $grade->feedback = $feedback;
         if ($gradeitem->is_manual_item()) {
-            if (!$grade = \grade_grade::fetch(array('itemid' => $gradeitem->id, 'userid' => $userid))) {
-                $grade = new \grade_grade();
-                $grade->userid = $userid;
-                $grade->itemid = $gradeitem->id;
-            }
             $grade->finalgrade = $finalgrade;
-            $grade->rawgrademax = $score->scoreMaximum;
-            $grade->timemodified = $timemodified;
-            $grade->feedbackformat = $feedbackformat;
-            $grade->feedback = $feedback;
             if (empty($grade->id)) {
                 $result = (bool)$grade->insert($source);
             } else {
                 $result = $grade->update($source);
             }
         } else {
-            $result = $gradeitem->update_raw_grade($userid, $finalgrade, $source, $feedback, $feedbackformat, null, $timemodified);
+            $grade->rawgrade = $finalgrade;
+            $status = \grade_update($source, $gradeitem->courseid, 
+                         $gradeitem->itemtype, $gradeitem->itemmodule, 
+                         $gradeitem->iteminstance, $gradeitem->itemnumber, 
+                         $grade);
+
+            $result = ($status == GRADE_UPDATE_OK);
         }
         if (!$result) {
-            debugging("failed to save score for item ".$gradeitem->id);
+            debugging("failed to save score for item ".$gradeitem->id." and user ".$grade->userid);
             throw new \Exception(null, 500);
         }
 
