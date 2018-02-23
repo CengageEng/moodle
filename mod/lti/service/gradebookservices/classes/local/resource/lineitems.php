@@ -274,7 +274,7 @@ EOD;
             throw new \Exception(null, 400);
         }
         if (is_numeric($json->scoreMaximum)) {
-            $max = $json->scoreMaximum;
+            $max = grade_floatval($json->scoreMaximum);
         } else {
             throw new \Exception(null, 400);
         }
@@ -309,6 +309,7 @@ EOD;
         \grade_item::set_properties($item, $params);
         $item->itemtype = 'manual';
         $item->idnumber = $resourceid;
+        $item->grademax = $max;
         $id = $item->insert('mod/ltiservice_gradebookservices');
         try {
             $DB->insert_record('ltiservice_gradebookservices', (object)array(
