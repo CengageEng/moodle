@@ -190,7 +190,7 @@ class lineitem extends resource_base {
         $item = \grade_item::fetch(array('id' => $olditem->id, 'courseid' => $olditem->courseid));
         $gbs = gradebookservices::find_ltiservice_gradebookservice_for_lineitem($olditem->id);
         $updategradeitem = false;
-        $upgrademaxscore = false;
+        $rescalegrades = false;
         $oldgrademax=grade_floatval($item->grademax);
         $upgradegradebookservices = false;
         if ($item->itemname !== $json->label) {
@@ -203,9 +203,7 @@ class lineitem extends resource_base {
             if (grade_floats_different($oldgrademax,
                     grade_floatval($json->scoreMaximum))) {
                 $updategradeitem = true;
-                if ($item->itemtype == 'manual') {
-                    $upgrademaxscore = true;
-                }
+                $rescalegrades = true;
             }
             $item->grademax = grade_floatval($json->scoreMaximum);
         }
@@ -257,7 +255,7 @@ class lineitem extends resource_base {
             if (!$item->update('mod/ltiservice_gradebookservices')) {
                 throw new \Exception(null, 500);
             }
-            if ($upgrademaxscore) {
+            if ($rescalegrades) {
                 $item->rescale_grades_keep_percentage(0, $oldgrademax, 0, $item->grademax);
             }
         }
