@@ -24,8 +24,8 @@
  */
 
 $string['allow'] = 'Use this service to retrieve members\' information as per privacy settings';
-$string['membership_management'] = 'IMS LTI Membership: ';
-$string['membership_management_help'] = 'Allow the tool to retrieve member\'s info from the course using the IMS LTI Membership Service. The privacy settings will apply.';
+$string['ltiservice_memberships'] = 'IMS LTI Membership: ';
+$string['ltiservice_memberships_help'] = 'Allow the tool to retrieve member\'s info from the course using the IMS LTI Membership Service. The privacy settings will apply.';
 $string['notallow'] = 'Do not use this service';
 $string['pluginname'] = 'Memberships LTI Service';
 $string['servicename'] = 'Memberships';

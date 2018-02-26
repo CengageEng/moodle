@@ -284,7 +284,7 @@ EOD;
      * @param \MoodleQuickForm $mform
      */
     public function get_configuration_options(&$mform) {
-        $elementname = 'membership_management';
+        $elementname = 'ltiservice_memberships';
         $options = [
             $this->get_string('notallow'),
             $this->get_string('allow')
