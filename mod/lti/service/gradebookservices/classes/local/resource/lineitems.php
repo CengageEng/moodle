@@ -274,7 +274,7 @@ EOD;
             throw new \Exception(null, 400);
         }
         if (is_numeric($json->scoreMaximum)) {
-            $max = grade_floatval($json->scoreMaximum);
+            $max = $json->scoreMaximum;
         } else {
             throw new \Exception(null, 400);
         }
