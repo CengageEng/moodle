@@ -24,7 +24,6 @@
  */
 
 $string['alwaysgs'] = 'Use this service for grade sync and column management ';
-$string['cleanup'] = 'LTI Assignment and Grade Services table cleanup';
 $string['grade_synchronization'] = 'IMS LTI Assignment and Grade Services: ';
 $string['grade_synchronization_help'] = 'Use the IMS LTI Assignment and Grade Service to synchronize
  the grades instead Basic Outcomes.
@@ -37,4 +36,4 @@ $string['nevergs'] = 'Do not use this service';
 $string['partialgs'] = 'Use this service for grade sync only';
 $string['pluginname'] = 'LTI Assignment and Grade Services';
 $string['servicename'] = 'LTI Assignment and Grade Services';
-
+$string['taskcleanup'] = 'LTI Assignment and Grade Services table cleanup';

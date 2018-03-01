@@ -140,55 +140,55 @@ abstract class service_base {
     abstract public function get_resources();
 
     /**
+     * Returns the configuration options for this service.
+     *
      * @param \MoodleQuickForm $mform Moodle quickform object definition
      */
-    public function get_configuration_options(&$mform) {}
+    public function get_configuration_options(&$mform) {
+
+    }
 
     /**
      * Return an array with the names of the parameters that the service will be saving in the configuration
      *
      * @return array  Names list of the parameters that the service will be saving in the configuration
-     *
      */
     public function get_configuration_parameter_names() {
         return array();
     }
 
     /**
-     * Default implementation will check for the
-     * existence of at least one mod_lti entry for that tool and context. It may be overridden
-     * if other inferences can be done. Ideally a Site Tool should be explicitly engaged with
-     * a course, the check on the presence of a link is a proxy to infer a Site Tool engagement
-     * until an explicit Site Tool - Course relationship exists.
+     * Default implementation will check for the existence of at least one mod_lti entry for that tool and context.
      *
-     * @param string $typeid The tool lti type id.
-     * @param string $courseid The course id.
+     * It may be overridden if other inferences can be done.
      *
-     * @return True if tool is used in context.
+     * Ideally a Site Tool should be explicitly engaged with a course, the check on the presence of a link is a proxy
+     * to infer a Site Tool engagement until an explicit Site Tool - Course relationship exists.
+     *
+     * @param int $typeid The tool lti type id.
+     * @param int $courseid The course id.
+     * @return bool returns True if tool is used in context, false otherwise.
      */
     public function is_used_in_context($typeid, $courseid) {
         global $DB;
 
-        // Ideally there would be an explicit engagement of a Site tool into a Course,
-        // right now relying on the presence of a link.
         $ok = $DB->record_exists('lti', array('course' => $courseid, 'typeid' => $typeid));
-        return ($ok || $DB->record_exists('lti_types', array('course' => $courseid, 'id' => $typeid)));
+        return $ok || $DB->record_exists('lti_types', array('course' => $courseid, 'id' => $typeid));
     }
 
     /**
-     * Checks if there is a site tool ir a course tool for this site
+     * Checks if there is a site tool or a course tool for this site.
      *
-     * @param string $typeid The tool lti type id.
-     * @param string $courseid The course id.
-     *
-     * @return True if tool is used in context.
+     * @param int $typeid The tool lti type id.
+     * @param int $courseid The course id.
+     * @return bool returns True if tool is allowed in context, false otherwise.
      */
     public function is_allowed_in_context($typeid, $courseid) {
         global $DB;
-        $ok = false;
-        // It it is a Course tool for this site or a Site tool.
+
+        // Check if it is a Course tool for this course or a Site tool.
         $type = $DB->get_record('lti_types', array('id' => $typeid));
-        if ($type && ($type->course == $courseid || $type->course == 1)) {
+        if ($type && ($type->course == $courseid || $type->course == SITEID)) {
             $ok = true;
         }
         return $ok;
@@ -203,8 +203,7 @@ abstract class service_base {
      * @param string $typeid       The tool lti type id.
      * @param string $modlti       The id of the lti activity.
      *
-     * The type is passed to check the configuration
-     * and not return parameters for services not used.
+     * The type is passed to check the configuration and not return parameters for services not used.
      *
      * @return array Key/value pairs to add as launch parameters.
      */
@@ -283,14 +282,13 @@ abstract class service_base {
     /**
      * Check that the request has been properly signed.
      *
-     * @param string $typeid The tool id
-     * @param string $courseid The course we are at
+     * @param int $typeid The tool id
+     * @param int $courseid The course we are at
      * @param string $body Request body (null if none)
      *
      * @return bool
      */
     public function check_type($typeid, $courseid, $body = null) {
-
         $ok = false;
         $tool = null;
         $consumerkey = lti\get_oauth_key_from_headers();

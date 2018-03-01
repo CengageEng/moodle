@@ -23,7 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace ltiservice_gradebookservices\local\resource;
+namespace ltiservice_gradebookservices\local\resources;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
 use mod_lti\local\ltiservice\resource_base;
@@ -34,14 +34,10 @@ defined('MOODLE_INTERNAL') || die();
  * A resource implementing LineItem.
  *
  * @package    ltiservice_gradebookservices
- * @since      Moodle 3.0
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lineitem extends resource_base {
-
-    /** @var string Course Id related to line item. */
-    protected $courseid;
 
     /**
      * Class constructor.
@@ -58,17 +54,6 @@ class lineitem extends resource_base {
         $this->methods[] = self::HTTP_GET;
         $this->methods[] = self::HTTP_PUT;
         $this->methods[] = self::HTTP_DELETE;
-
-    }
-
-    /**
-     * Get the course id.
-     *
-     * @return string
-     */
-    public function get_courseid() {
-
-        return $this->courseid;
 
     }
 
@@ -173,7 +158,7 @@ class lineitem extends resource_base {
      * Process a PUT request.
      *
      * @param string $body PUT body
-     * @param \ltiservice_gradebookservices\local\resource\lineitem $olditem Grade item instance
+     * @param \ltiservice_gradebookservices\local\resources\lineitem $olditem Grade item instance
      * @param string $typeid Tool Type Id
      *
      * @return string
@@ -191,7 +176,7 @@ class lineitem extends resource_base {
         $gbs = gradebookservices::find_ltiservice_gradebookservice_for_lineitem($olditem->id);
         $updategradeitem = false;
         $rescalegrades = false;
-        $oldgrademax=grade_floatval($item->grademax);
+        $oldgrademax = grade_floatval($item->grademax);
         $upgradegradebookservices = false;
         if ($item->itemname !== $json->label) {
             $updategradeitem = true;
@@ -297,7 +282,7 @@ class lineitem extends resource_base {
     /**
      * Process a DELETE request.
      *
-     * @param \ltiservice_gradebookservices\local\resource\lineitem $item Grade item instance
+     * @param \ltiservice_gradebookservices\local\resources\lineitem $item Grade item instance
      * @throws \Exception
      */
     private function delete_request($item) {
@@ -321,7 +306,7 @@ class lineitem extends resource_base {
     /**
      * Get permissions from the config of the tool for that resource
      *
-     * @param string $typeid
+     * @param int $typeid
      *
      * @return array with the permissions related to this resource by the $lti_type or null if none.
      */

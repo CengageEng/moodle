@@ -246,8 +246,8 @@ abstract class resource_base {
     /**
      * Check to make sure the request is valid.
      *
-     * @param string $typeid                The typeid we want to use
-     * @param string $contextid             The course we are at
+     * @param int $typeid                   The typeid we want to use
+     * @param int $contextid                The course we are at
      * @param string $permissionrequested   The permission to be checked
      * @param string $body                  Body of HTTP request message
      *
@@ -259,8 +259,8 @@ abstract class resource_base {
             $neededpermissions = $this->get_permissions($typeid);
             foreach ($neededpermissions as $permission) {
                 if ($permission == $permissionrequested) {
-                        $ok = true;
-                        break;
+                    $ok = true;
+                    break;
                 }
             }
             if (!$ok) {
@@ -274,7 +274,7 @@ abstract class resource_base {
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @param string $ltitype   Type of LTI permission to retrieve
+     * @param int $ltitype   Type of LTI
      *
      * @return array with the permissions related to this resource by the $lti_type or empty if none.
      */

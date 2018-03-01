@@ -24,7 +24,9 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+
 global $CFG;
+
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 
 /**
@@ -39,6 +41,7 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
 
     /** TypeId contained in DB but is invalid */
     const NONVALIDTYPEID = 0;
+
     /**
      * Returns the subplugin information to attach to submission element
      * @return backup_subplugin_element
@@ -46,7 +49,6 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
     protected function define_lti_subplugin_structure() {
         global $DB;
 
-        $userinfo = $this->get_setting_value('users');
         // Create XML elements.
         $subplugin = $this->get_subplugin_element();
         $subpluginwrapper = new backup_nested_element($this->get_recommended_name());
@@ -75,7 +77,6 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // Default to invalid condition.
         $typeid = 0;
         $toolproxyid = '0';
-        $baseurl = 'NOVALIDTYPE';
 
         /* cache parent property to account for missing PHPDoc type specification */
         /** @var backup_activity_task $activitytask */
@@ -87,7 +88,6 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         if ($ltitype) {
             $typeid = $lti->typeid;
             $toolproxyid = $ltitype->toolproxyid;
-            $baseurl = $ltitype->baseurl;
         } else if ($lti->typeid == self::NONVALIDTYPEID) { // This activity comes from an old backup.
             // 1. Let's check if the activity is coupled. If so, find the values in the GBS element.
             $gbsrecord = $DB->get_record('ltiservice_gradebookservices',
@@ -95,19 +95,19 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
             if ($gbsrecord) {
                 $typeid = $gbsrecord->typeid;
                 $toolproxyid = $gbsrecord->toolproxyid;
-                $baseurl = $gbsrecord->baseurl;
             } else { // 2. If it is uncoupled... we will need to guess the right activity typeid
                 // Guess the typeid for the activity.
                 $tool = lti_get_tool_by_url_match($lti->toolurl, $activitycourseid);
                 if (!$tool) {
                     $tool = lti_get_tool_by_url_match($lti->securetoolurl, $activitycourseid);
                 }
-                $alttypeid = $tool->id;
-                // If we have a valid typeid then get types again.
-                if ($alttypeid != self::NONVALIDTYPEID) {
-                    $ltitype = $DB->get_record('lti_types', ['id' => $alttypeid], 'toolproxyid, baseurl');
-                    $toolproxyid = $ltitype->toolproxyid;
-                    $baseurl = $ltitype->baseurl;
+                if ($tool) {
+                    $alttypeid = $tool->id;
+                    // If we have a valid typeid then get types again.
+                    if ($alttypeid != self::NONVALIDTYPEID) {
+                        $ltitype = $DB->get_record('lti_types', ['id' => $alttypeid], 'toolproxyid, baseurl');
+                        $toolproxyid = $ltitype->toolproxyid;
+                    }
                 }
             }
         }
@@ -115,20 +115,21 @@ class backup_ltiservice_gradebookservices_subplugin extends backup_subplugin {
         // Define sources.
         if ($toolproxyid != null) {
             $lineitemssql = "SELECT l.*, t.vendorcode as vendorcode, t.guid as guid
-                                              FROM {ltiservice_gradebookservices} l
-                                        INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
-                                             WHERE l.courseid = ?
-                                               AND l.toolproxyid = ?
-                                               AND l.typeid is null";
+                               FROM {ltiservice_gradebookservices} l
+                         INNER JOIN {lti_tool_proxies} t ON (t.id = l.toolproxyid)
+                              WHERE l.courseid = ?
+                                AND l.toolproxyid = ?
+                                AND l.typeid is null";
             $lineitemsparams = ['courseid' => backup::VAR_COURSEID, backup_helper::is_sqlparam($toolproxyid)];
         } else {
             $lineitemssql = "SELECT l.*, null as vendorcode, null as guid
-                                             FROM {ltiservice_gradebookservices} l
-                                            WHERE l.courseid = ?
-                                              AND l.typeid = ?
-                                              AND l.toolproxyid is null";
+                               FROM {ltiservice_gradebookservices} l
+                              WHERE l.courseid = ?
+                                AND l.typeid = ?
+                                AND l.toolproxyid is null";
             $lineitemsparams = ['courseid' => backup::VAR_COURSEID, backup_helper::is_sqlparam($typeid)];
         }
+
         $lineitem->set_source_sql($lineitemssql, $lineitemsparams);
 
         return $subplugin;

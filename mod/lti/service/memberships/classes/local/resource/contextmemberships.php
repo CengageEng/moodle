@@ -108,7 +108,7 @@ class contextmemberships extends resource_base {
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @param string $typeid
+     * @param int $typeid
      * @return array with the permissions related to this resource by the $lti_type or null if none.
      */
     public function get_permissions($typeid) {

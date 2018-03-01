@@ -23,8 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
-namespace ltiservice_gradebookservices\local\resource;
+namespace ltiservice_gradebookservices\local\resources;
 
 use ltiservice_gradebookservices\local\service\gradebookservices;
 use mod_lti\local\ltiservice\resource_base;
@@ -35,7 +34,6 @@ defined('MOODLE_INTERNAL') || die();
  * A resource implementing LISResults container.
  *
  * @package    ltiservice_gradebookservices
- * @since      Moodle 3.0
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -249,7 +247,7 @@ EOD;
     /**
      * get permissions from the config of the tool for that resource
      *
-     * @param string $typeid
+     * @param int $typeid
      *
      * @return array with the permissions related to this resource by the $lti_type or null if none.
      */

@@ -24,8 +24,10 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+
 global $CFG;
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
+
 /**
  * Restore subplugin class.
  *
@@ -40,6 +42,11 @@ require_once($CFG->dirroot.'/mod/lti/locallib.php');
  */
 class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
 
+    /**
+     * Returns the subplugin structure to attach to the XML element.
+     *
+     * @return restore_path_element[] array of elements to be processed on restore.
+     */
     protected function define_lti_subplugin_structure() {
 
         $paths = array();
@@ -51,9 +58,9 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
 
     /**
      * Processes one lineitem
+     *
      * @param mixed $data
      * @return void
-     * @throws Exception
      */
     public function process_ltiservice_gradebookservices_lineitem($data) {
         global $DB;
@@ -92,22 +99,17 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
         }
         // If this has not been restored before.
         if ($this->get_mappingid('gbsgradeitemrestored',  $data->id, 0) == 0) {
-            try {
-                $newgbsid = $DB->insert_record('ltiservice_gradebookservices', (object) array(
-                        'gradeitemid' => 0,
-                        'courseid' => $courseid,
-                        'toolproxyid' => $newtoolproxyid,
-                        'ltilinkid' => $ltilinkid,
-                        'typeid' => $newtypeid,
-                        'baseurl' => $data->baseurl,
-                        'tag' => $data->tag
-                ));
-                $this->set_mapping('gbsgradeitemoldid', $newgbsid, $data->gradeitemid);
-                $this->set_mapping('gbsgradeitemrestored', $data->id, $data->id);
-            } catch (\Exception $e) {
-                debugging('Error restoring the lti gradebookservicescreating: ' . $e->getTraceAsString());
-                throw $e;
-            }
+            $newgbsid = $DB->insert_record('ltiservice_gradebookservices', (object) array(
+                    'gradeitemid' => 0,
+                    'courseid' => $courseid,
+                    'toolproxyid' => $newtoolproxyid,
+                    'ltilinkid' => $ltilinkid,
+                    'typeid' => $newtypeid,
+                    'baseurl' => $data->baseurl,
+                    'tag' => $data->tag
+            ));
+            $this->set_mapping('gbsgradeitemoldid', $newgbsid, $data->gradeitemid);
+            $this->set_mapping('gbsgradeitemrestored', $data->id, $data->id);
         }
     }
 
@@ -138,9 +140,9 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
      * we will try to find the better typeid that matches with the lineitem.
      * If none is found, then we set it to 0.
      *
-     * @param mixed $data
-     * @param integer @courseid
-     * @return integer $newtypeid
+     * @param stdClass $data
+     * @param int $courseid
+     * @return int The item type id
      */
     private function find_typeid($data, $courseid) {
         global $DB;
@@ -186,8 +188,8 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
     }
 
     /**
-     * We call the after_restore_lti to update the grade_items id's
-     * that we didn't know in the moment of creating the gradebookservices rows.
+     * We call the after_restore_lti to update the grade_items id's that we didn't know in the moment of creating
+     * the gradebookservices rows.
      */
     protected function after_restore_lti() {
         global $DB;

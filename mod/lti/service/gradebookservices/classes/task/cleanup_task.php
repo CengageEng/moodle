@@ -29,6 +29,14 @@ use ltiservice_gradebookservices\local\service\gradebookservices;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Class containing the scheduled task for gradebookservices.
+ *
+ * @package    ltiservice_gradebookservices
+ * @copyright  2017 Cengage Learning http://www.cengage.com
+ * @author     Dirk Singels, Diego del Blanco, Claude Vervoort
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class cleanup_task extends scheduled_task {
 
     /**
@@ -37,7 +45,7 @@ class cleanup_task extends scheduled_task {
      * @return string
      */
     public function get_name() {
-        return get_string('cleanup', 'ltiservice_gradebookservices');
+        return get_string('taskcleanup', 'ltiservice_gradebookservices');
     }
 
     /**

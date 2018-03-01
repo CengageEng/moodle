@@ -94,6 +94,7 @@ define('LTI_VERSION_2', 'LTI-2p0');
  *
  * @param  stdClass $instance the external tool activity settings
  * @return array the endpoint URL and parameters (including the signature)
+ * @since  Moodle 3.0
  */
 function lti_get_launch_data($instance) {
     global $PAGE, $CFG, $USER;
@@ -281,7 +282,7 @@ function lti_get_launch_data($instance) {
  * Launch an external tool activity.
  *
  * @param  stdClass $instance the external tool activity settings
- * return string The HTML code containing the javascript code for the launch
+ * @return string The HTML code containing the javascript code for the launch
  */
 function lti_launch_tool($instance) {
 
@@ -1456,7 +1457,8 @@ function lti_get_tools_by_domain($domain, $state = null, $courseid = null) {
 
 /**
  * Returns all basicLTI tools configured by the administrator
- * @param string $course
+ *
+ * @param int $course
  *
  * @return array
  */
@@ -2019,7 +2021,7 @@ function lti_add_type($type, $config) {
         foreach ($config as $key => $value) {
             if (!is_null($value)) {
                 $fieldparts = preg_split("/(lti|ltiservice)_/i", $key);
-                // if array has only one element, it did not start with pattern
+                // If array has only one element, it did not start with the pattern.
                 if (count($fieldparts) < 2) {
                     continue;
                 }
@@ -3011,6 +3013,7 @@ function serialise_tool_proxy(stdClass $proxy) {
  * Loads the cartridge information into the tool type, if the launch url is for a cartridge file
  *
  * @param stdClass $type The tool type object to be filled in
+ * @since Moodle 3.1
  */
 function lti_load_type_if_cartridge($type) {
     if (!empty($type->lti_toolurl) && lti_is_cartridge($type->lti_toolurl)) {
@@ -3022,6 +3025,7 @@ function lti_load_type_if_cartridge($type) {
  * Loads the cartridge information into the new tool, if the launch url is for a cartridge file
  *
  * @param stdClass $lti The tools config
+ * @since Moodle 3.1
  */
 function lti_load_tool_if_cartridge($lti) {
     if (!empty($lti->toolurl) && lti_is_cartridge($lti->toolurl)) {
@@ -3034,6 +3038,7 @@ function lti_load_tool_if_cartridge($lti) {
  *
  * @param  string $url The url to be checked
  * @return True if the url is for a cartridge
+ * @since Moodle 3.1
  */
 function lti_is_cartridge($url) {
     // If it is empty, it's not a cartridge.
@@ -3066,6 +3071,7 @@ function lti_is_cartridge($url) {
  * @param  string   $url     The URL to the cartridge
  * @param  stdClass $type    The tool type object to be filled in
  * @throws moodle_exception if the cartridge could not be loaded correctly
+ * @since Moodle 3.1
  */
 function lti_load_type_from_cartridge($url, $type) {
     $toolinfo = lti_load_cartridge($url,
@@ -3117,6 +3123,7 @@ function lti_load_type_from_cartridge($url, $type) {
  * @param  string   $url    The URL to the cartridge
  * @param  stdClass $lti    LTI object
  * @throws moodle_exception if the cartridge could not be loaded correctly
+ * @since Moodle 3.1
  */
 function lti_load_tool_from_cartridge($url, $lti) {
     $toolinfo = lti_load_cartridge($url,
@@ -3216,12 +3223,11 @@ function lti_load_cartridge($url, $map, $propertiesmap = array()) {
 /**
  * Search for a tag within an XML DOMDocument
  *
- * @param  string $tagname The name of the tag to search for
- * @param  DOMXPath $xpath The XML to find the tag in
- * @param  string $attribute The attribute to search for (if we should search for a child node with the given
+ * @param  stdClass $tagname The name of the tag to search for
+ * @param  XPath    $xpath   The XML to find the tag in
+ * @param  XPath    $attribute The attribute to search for (if we should search for a child node with the given
  * value for the name attribute
-
- * @return null
+ * @since Moodle 3.1
  */
 function get_tag($tagname, $xpath, $attribute = null) {
     if ($attribute) {
@@ -3234,25 +3240,3 @@ function get_tag($tagname, $xpath, $attribute = null) {
     }
     return null;
 }
-
-/**
- * Get the next available itemnumber in a gradeitem
- * @since Moodle 3.5
- */
-function get_next_itemnumber() {
-    global $DB;
-
-    $sql = 'SELECT MAX(itemnumber)
-              FROM {grade_items}';
-    $itemnumber = $DB->get_field_sql($sql);
-    $min = 9999;
-    if ($itemnumber > $min) {
-        $itemnumber += 1;
-    } else {
-        $itemnumber = $min + 1;
-    }
-
-    return $itemnumber;
-}
-
-

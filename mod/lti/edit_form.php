@@ -57,12 +57,15 @@ require_once($CFG->dirroot.'/mod/lti/locallib.php');
  * LTI Edit Form
  *
  * @package    mod_lti
+ * @copyright  2009 Marc Alier, Jordi Piguillem, Nikolas Galanis
+ *  marc.alier@upc.edu
+ * @copyright  2009 Universitat Politecnica de Catalunya http://www.upc.edu
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_lti_edit_types_form extends moodleform {
 
     /**
-     * Define this form - called from the parent constructor
+     * Define this form.
      */
     public function definition() {
         global $CFG;
@@ -159,10 +162,10 @@ class mod_lti_edit_types_form extends moodleform {
         }
 
         $mform->addElement('text', 'lti_toolurl_ContentItemSelectionRequest',
-            get_string('toolurl_ContentItemSelectionRequest', 'lti'), array('size' => '64'));
+            get_string('toolurl_contentitemselectionrequest', 'lti'), array('size' => '64'));
         $mform->setType('lti_toolurl_ContentItemSelectionRequest', PARAM_URL);
         $mform->setAdvanced('lti_toolurl_ContentItemSelectionRequest');
-        $mform->addHelpButton('lti_toolurl_ContentItemSelectionRequest', 'toolurl_ContentItemSelectionRequest', 'lti');
+        $mform->addHelpButton('lti_toolurl_ContentItemSelectionRequest', 'toolurl_contentitemselectionrequest', 'lti');
         $mform->disabledIf('lti_toolurl_ContentItemSelectionRequest', 'lti_contentitem', 'notchecked');
         if ($istool) {
             $mform->disabledIf('lti_toolurl__ContentItemSelectionRequest', null);

@@ -23,16 +23,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 namespace ltiservice_gradebookservices\local\service;
 
-use ltiservice_gradebookservices\local\resource\lineitem;
-use ltiservice_gradebookservices\local\resource\lineitems;
-use ltiservice_gradebookservices\local\resource\results;
-use ltiservice_gradebookservices\local\resource\scores;
+use ltiservice_gradebookservices\local\resources\lineitem;
+use ltiservice_gradebookservices\local\resources\lineitems;
+use ltiservice_gradebookservices\local\resources\results;
+use ltiservice_gradebookservices\local\resources\scores;
 use mod_lti\local\ltiservice\resource_base;
 use mod_lti\local\ltiservice\service_base;
-
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,7 +38,6 @@ defined('MOODLE_INTERNAL') || die();
  * A service implementing LTI Gradebook Services.
  *
  * @package    ltiservice_gradebookservices
- * @since      Moodle 3.0
  * @copyright  2017 Cengage Learning http://www.cengage.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -56,7 +53,7 @@ class gradebookservices extends service_base {
 
         parent::__construct();
         $this->id = 'gradebookservices';
-        $this->name = get_string('servicename', self::SERVICE_NAME);
+        $this->name = $this->get_string('servicename');
 
     }
 
@@ -75,11 +72,9 @@ class gradebookservices extends service_base {
             $this->resources[] = new lineitems($this);
             $this->resources[] = new results($this);
             $this->resources[] = new scores($this);
-
         }
 
         return $this->resources;
-
     }
 
     /**
@@ -270,7 +265,7 @@ class gradebookservices extends service_base {
      * @param string $itemid ID of lineitem
      * @param string $typeid
      *
-     * @return \ltiservice_gradebookservices\local\resource\lineitem|bool
+     * @return \ltiservice_gradebookservices\local\resources\lineitem|bool
      */
     public function get_lineitem($courseid, $itemid, $typeid) {
         global $DB, $CFG;
@@ -312,9 +307,9 @@ class gradebookservices extends service_base {
     /**
      * Set a grade item.
      *
-     * @param object $item Grade Item record
+     * @param object $gradeitem Grade Item record
      * @param object $score Result object
-     * @param string $userid User ID
+     * @param int $userid User ID
      *
      * @throws \Exception
      */
@@ -538,36 +533,30 @@ class gradebookservices extends service_base {
     }
 
     /**
+     * Deletes orphaned rows from the 'ltiservice_gradebookservices' table.
+     *
      * Sometimes, if a gradebook entry is deleted and it was a lineitem
      * the row in the table ltiservice_gradebookservices can become an orphan
      * This method will clean these orphans. It will happens based on a task
      * because it is not urgent and we don't want to slow the service
-     *
-     * @throws \Exception
      */
     public static function delete_orphans_ltiservice_gradebookservices_rows() {
         global $DB;
-        $sql = 'DELETE
+
+        $sql = "DELETE
                   FROM {ltiservice_gradebookservices}
-                 WHERE gradeitem NOT IN
-                       (SELECT DISTINCT id
-                                   FROM {grade_items} gi
-                                  WHERE gi.itemtype = "mod"
-                       AND gi.itemmodule = "lti")';
-        try {
-            $DB->execute($sql);
-        } catch (\Exception $e) {
-            debugging("Error deleting orphan gradebook rows: ", $e);
-            throw $e;
-        }
+                 WHERE gradeitemid NOT IN (SELECT id
+                                             FROM {grade_items} gi
+                                            WHERE gi.itemtype = 'mod'
+                                              AND gi.itemmodule = 'lti')";
+        $DB->execute($sql);
     }
 
     /**
      * Check if a user can be graded in a course
      *
-     * @param string $courseid The course
-     * @param string $userid The user
-     *
+     * @param int $courseid The course
+     * @param int $userid The user
      * @return bool
      */
     public static function is_user_gradable_in_course($courseid, $userid) {
