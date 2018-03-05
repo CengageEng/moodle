@@ -176,6 +176,7 @@
 
     label {
         margin: 0;
+        display: block;
     }
 
     .header {
@@ -620,6 +621,10 @@ body.path-question-type .mform fieldset.hidden {
 // Fix for accurate positioning of ddwtos drag and drop question types.
 .que.ddwtos {
     box-sizing: content-box;
+}
+
+.tag-condition-container {
+    position: relative;
 }
 
 @include media-breakpoint-down(sm) {
