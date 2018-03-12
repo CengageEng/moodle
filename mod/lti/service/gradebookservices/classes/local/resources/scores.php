@@ -83,7 +83,7 @@ class scores extends resource_base {
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             } else {
                 switch ($response->get_request_method()) {

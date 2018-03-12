@@ -77,11 +77,11 @@ class results extends resource_base {
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             } else {
                 if (!$this->check_type($typeid, $contextid,  'Result.collection:get', $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             }
             if (empty($contextid) || (!empty($contenttype) && !in_array($contenttype, $this->formats))) {

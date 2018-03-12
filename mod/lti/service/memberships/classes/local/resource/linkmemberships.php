@@ -85,12 +85,12 @@ class linkmemberships extends resource_base {
             $tool = $DB->get_record('lti_types', array('id' => $lti->typeid));
             if ($tool->toolproxyid == 0) { // We wil use the same permission for this and contextmembers.
                 if (!$this->check_type($lti->typeid, $lti->course, 'ToolProxyBinding.memberships.url:get', $body = null)) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             } else {
                 $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid));
                 if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             }
             if (!($course = $DB->get_record('course', array('id' => $lti->course), 'id', IGNORE_MISSING))) {

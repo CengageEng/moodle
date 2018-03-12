@@ -79,18 +79,18 @@ class lineitems extends resource_base {
         try {
             if (is_null($typeid)) {
                 if (!$this->check_tool_proxy(null, $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             } else {
                 switch ($response->get_request_method()) {
                     case self::HTTP_GET:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.collection:get', $response->get_request_data())) {
-                            throw new \Exception(null, 401);
+                            throw new \Exception(null, 403);
                         }
                         break;
                     case self::HTTP_POST:
                         if (!$this->check_type($typeid, $contextid, 'LineItem.collection:post', $response->get_request_data())) {
-                            throw new \Exception(null, 401);
+                            throw new \Exception(null, 403);
                         }
                         break;
                     default:  // Should not be possible.

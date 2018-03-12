@@ -87,12 +87,12 @@ class contextmemberships extends resource_base {
             if ($tool->toolproxyid == 0) {
                 if (!$this->check_type($params['tool_code'], $params['context_id'],
                         'ToolProxyBinding.memberships.url:get', $body = null)) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             } else {
                 $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid), 'guid', IGNORE_MISSING);
                 if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
-                    throw new \Exception(null, 401);
+                    throw new \Exception(null, 403);
                 }
             }
             $json = memberships::get_users_json($this, $context, $course->id, $tool, $role, $limitfrom, $limitnum, null, null);
