@@ -34,6 +34,9 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * A resource implementing Link Memberships.
+ * The link membership is no more defined in the published
+ * version of the LTI specification. It is replaced by the 
+ * rlid parameter in the context membership URL.
  *
  * @package    ltiservice_memberships
  * @since      Moodle 3.0

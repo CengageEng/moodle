@@ -28,6 +28,7 @@ namespace ltiservice_memberships\local\resource;
 
 use mod_lti\local\ltiservice\resource_base;
 use ltiservice_memberships\local\service\memberships;
+use core_availability\info_module;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -69,6 +70,10 @@ class contextmemberships extends resource_base {
         $role = optional_param('role', '', PARAM_TEXT);
         $limitnum = optional_param('limit', 0, PARAM_INT);
         $limitfrom = optional_param('from', 0, PARAM_INT);
+        $linkid = optional_param('rlid', '', PARAM_TEXT);
+        $lti = null;
+        $modinfo = null;
+
         if ($limitnum <= 0) {
             $limitfrom = 0;
         }
@@ -84,6 +89,18 @@ class contextmemberships extends resource_base {
                                     'id,toolproxyid,enabledcapability,parameter', IGNORE_MISSING))) {
                 throw new \Exception(null, 404);
             }
+            if (!empty($linkid)) {
+                if (!($lti = $DB->get_record('lti', array('id' => $linkid), 'id,course,typeid,servicesalt', IGNORE_MISSING))) {
+                    throw new \Exception(null, 404);
+                }
+                $modinfo = get_fast_modinfo($course);
+                $cm = get_coursemodule_from_instance('lti', $linkid, $lti->course, false, MUST_EXIST);
+                $cm = $modinfo->get_cm($cm->id);
+                $modinfo = new info_module($cm);
+                if ($modinfo->is_available_for_all()) {
+                    $modinfo = null;
+                }
+            }
             if ($tool->toolproxyid == 0) {
                 if (!$this->check_type($params['tool_code'], $params['context_id'],
                         'ToolProxyBinding.memberships.url:get', $body = null)) {
@@ -95,7 +112,7 @@ class contextmemberships extends resource_base {
                     throw new \Exception(null, 403);
                 }
             }
-            $json = memberships::get_users_json($this, $context, $course->id, $tool, $role, $limitfrom, $limitnum, null, null);
+            $json = memberships::get_users_json($this, $context, $course->id, $tool, $role, $limitfrom, $limitnum, $lti, $modinfo);
 
             $response->set_content_type($this->formats[0]);
             $response->set_body($json);

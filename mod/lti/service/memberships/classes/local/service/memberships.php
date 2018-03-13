@@ -152,93 +152,109 @@ class memberships extends service_base {
      */
     private static function users_to_json($resource, $users, $id, $tool, $exclude, $limitfrom, $limitnum,
                                          $lti, $info) {
-
-        $nextpage = 'null';
-        if ($limitnum > 0) {
-            $limitfrom += $limitnum;
-            $nextpage = "\"{$resource->get_endpoint()}?limit={$limitnum}&amp;from={$limitfrom}\"";
-        }
         $json = <<< EOD
 {
   "@context" : "http://purl.imsglobal.org/ctx/lis/v2/MembershipContainer",
   "@type" : "Page",
   "@id" : "{$resource->get_endpoint()}",
-  "nextPage" : {$nextpage},
+
+EOD;
+
+        if ($limitnum > 0) {
+            $limitfrom += $limitnum;
+            $nextpage = "{$resource->get_endpoint()}?limit={$limitnum}&from={$limitfrom}";
+            if (!is_null($lti)) {
+                $nextpage .= "&rlid={$lti->id}";
+            }
+            $json .= <<< EOD
+  "nextPage" : "{$nextpage}",
+
+EOD;
+        }
+
+        $json .= <<< EOD
   "pageOf" : {
     "@type" : "LISMembershipContainer",
     "membershipSubject" : {
       "@type" : "Context",
       "contextId" : "{$id}",
       "membership" : [
-
 EOD;
         $enabledcapabilities = lti_get_enabled_capabilities($tool);
-        $isnewtoolproxy = $tool->toolproxyid == 0;
+        $islti2 = $tool->toolproxyid > 0;
         $sep = '        ';
         foreach ($users as $user) {
             if (in_array($user->id, $exclude)) {
                 continue;
             }
-            if (empty($info) || !$info->is_user_visible($info->get_course_module(), $user->id)) {
+            if (!empty($info) && !$info->is_user_visible($info->get_course_module(), $user->id)) {
                 continue;
             }
 
             $member = new \stdClass();
+            $member->{"@type" } = 'LISPerson';
             $membership = new \stdClass();
             $membership->status = 'Active';
             $membership->role = explode(',', lti_get_ims_role($user->id, null, $id, true));
 
             $toolconfig = lti_get_type_type_config($tool->id);
-
-            $instanceconfig = new \stdClass();
+            $instanceconfig = null;
             if (!is_null($lti)) {
                 $instanceconfig = lti_get_type_config_from_instance($lti->id);
             }
+            $isallowedlticonfig = self::is_allowed_field_set($toolconfig, $instanceconfig, 
+                                    ['name' => 'lti_sendname', 'email' => 'lti_sendemailaddr']);
 
             $includedcapabilities = [
-                ['User.id'              => ['type' => 'id',
+                'User.id'              => ['type' => 'id',
                                             'member.field' => 'userId',
-                                            'source.value' => $user->id]],
-                ['Person.sourcedId'     => ['type' => 'id',
+                                            'source.value' => $user->id],
+                'Person.sourcedId'     => ['type' => 'id',
                                             'member.field' => 'sourcedId',
-                                            'source.value' => format_string($user->idnumber)]],
-                ['Person.name.full'     => ['type' => 'name',
+                                            'source.value' => format_string($user->idnumber)],
+                'Person.name.full'     => ['type' => 'name',
                                             'member.field' => 'name',
-                                            'source.value' => format_string("{$user->firstname} {$user->lastname}")]],
-                ['Person.name.given'    => ['type' => 'name',
+                                            'source.value' => format_string("{$user->firstname} {$user->lastname}")],
+                'Person.name.given'    => ['type' => 'name',
                                             'member.field' => 'givenName',
-                                            'source.value' => format_string($user->firstname)]],
-                ['Person.name.family'   => ['type' => 'name',
+                                            'source.value' => format_string($user->firstname)],
+                'Person.name.family'   => ['type' => 'name',
                                             'member.field' => 'familyName',
-                                            'source.value' => format_string($user->lastname)]],
-                ['Person.email.primary' => ['type' => 'email',
+                                            'source.value' => format_string($user->lastname)],
+                'Person.email.primary' => ['type' => 'email',
                                             'member.field' => 'email',
-                                            'source.value' => format_string($user->email)]],
-                ['Result.sourcedId'     => ['type' => 'result',
+                                            'source.value' => format_string($user->email)]
+            ];
+
+            if (!is_null($lti)) {
+                $includedcapabilities['Result.sourcedId']  = ['type' => 'result',
                                             'member.field' => 'resultSourcedId',
                                             'source.value' => json_encode(lti_build_sourcedid($lti->id,
                                                                                              $user->id,
                                                                                              $lti->servicesalt,
-                                                                                             $lti->typeid))]]];
-
+                                                                                             $lti->typeid))];
+                $message = new \stdClass();
+                $message->message_type = 'basic-lti-launch-request';
+                if (!empty($lti->servicesalt)) {
+                    $message->lis_result_sourcedid = $includedcapabilities['Result.sourcedId']['source.value']; 
+                }
+                $member->message = $message;
+                                                                                            }
             $hasmemberships = $toolconfig->ltiservice_memberships == self::MEMBERSHIP_ENABLED;
-            $lticonfig = ['tool' => $toolconfig,
-                          'instance' => $instanceconfig,
-                          'field' => ['name' => 'lti_sendname'],
-                                     ['email' => 'lti_sendemailaddr']];
-            $isvalidlticonfig = self::is_valid_field_set($lticonfig);
+
 
             foreach ($includedcapabilities as $capabilityname => $capability) {
-                if (!in_array($capabilityname, $enabledcapabilities)) {
-                    continue;
-                }
-
-                if ($isnewtoolproxy && $hasmemberships) {
-                    if (($capability->type === 'id')
-                     || ($capability->type === 'name' && $isvalidlticonfig['name'])
-                     || ($capability->type === 'email' && $isvalidlticonfig['email]'])
-                     || ($capability->type === 'result' && !empty($lti->servicesalt))) {
-                            $member->{$capability['member.field']} = $capability['source.value'];
+                if ($islti2) {
+                    if (!in_array($capabilityname, $enabledcapabilities)) {
+                        continue;
+                    }
+                } else {
+                    if (($capability['type'] === 'id')
+                     || ($capability['type'] === 'name' && $isallowedlticonfig['name'])
+                     || ($capability['type'] === 'email' && $isallowedlticonfig['email'])
+                     || ($capability['type'] === 'result' && !empty($lti->servicesalt))) {
+                        // keeping result sourced id here for backward compatibility in case this was actually used...
+                        $member->{$capability['member.field']} = $capability['source.value'];
                     }
                 }
             }
@@ -264,18 +280,20 @@ EOD;
      * Determines whether a user attribute may be used as part of LTI membership
      * @param array $lticonfig Contains configuration for system specific tool,
      *                          instance specific LTI tool and name of the config field to check
-     * @return array Verification
+     * @return array Verification which associates an attribute with a boolean (allowed or not)
      */
-    private static function is_valid_field_set($lticonfig) {
-        $isvalidstate = [];
-        foreach ($lticonfig['field'] as $key => $field) {
-            $include = self::ALWAYS_INCLUDE_FIELD == $lticonfig['toolconfig']->{$lticonfig['field']};
-            $delegated = self::DELEGATE_TO_INSTRUCTOR == $lticonfig['toolconfig']->{$lticonfig['field']};
-            $valid = ($include ||
-                ($delegated && ($lticonfig['instanceconfig']->{$lticonfig['field']} == self::INSTRUCTOR_INCLUDED)));
-            array_push($isvalidstate, [$key, $valid]);
+    private static function is_allowed_field_set($toolconfig, $instanceconfig, $fields) {
+        $isallowedstate = [];
+        foreach ($fields as $key => $field) {
+            $allowed = self::ALWAYS_INCLUDE_FIELD == $toolconfig->{$field};
+            if (!$allowed) {
+                if (self::DELEGATE_TO_INSTRUCTOR == $toolconfig->{$field} && !is_null($instanceconfig)) {
+                    $include = $instanceconfig->{$field} == self::INSTRUCTOR_INCLUDED;
+                }
+            }
+            $isallowedstate[$key] = $allowed;
         }
-        return $isvalidstate;
+        return $isallowedstate;
     }
 
     /**
