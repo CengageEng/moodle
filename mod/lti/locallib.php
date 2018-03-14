@@ -582,11 +582,9 @@ function lti_build_custom_parameters($toolproxy, $tool, $instance, $params,
     if ($customstr) {
         $custom = lti_split_custom_parameters($toolproxy, $tool, $params, $customstr, $islti2);
     }
-    if (!isset($typeconfig['allowinstructorcustom']) || $typeconfig['allowinstructorcustom'] != LTI_SETTING_NEVER) {
-        if ($instructorcustomstr) {
-            $custom = array_merge(lti_split_custom_parameters($toolproxy, $tool, $params,
-                $instructorcustomstr, $islti2), $custom);
-        }
+    if ($instructorcustomstr) {
+        $custom = array_merge(lti_split_custom_parameters($toolproxy, $tool, $params,
+            $instructorcustomstr, $islti2), $custom);
     }
     if ($islti2) {
         $custom = array_merge(lti_split_custom_parameters($toolproxy, $tool, $params,

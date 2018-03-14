@@ -96,7 +96,7 @@ class memberships extends service_base {
      *
      * @param \mod_lti\local\ltiservice\resource_base $resource       Resource handling the request
      * @param \context_course   $context    Course context
-     * @param string            $id         Course ID
+     * @param string            $contextid         Course ID
      * @param object            $tool       Tool instance object
      * @param string            $role       User role requested (empty if none)
      * @param int               $limitfrom  Position of first record to be returned
@@ -107,7 +107,7 @@ class memberships extends service_base {
      *
      * @return string
      */
-    public static function get_users_json($resource, $context, $id, $tool, $role, $limitfrom, $limitnum, $lti, $info) {
+    public static function get_users_json($resource, $context, $contextid, $tool, $role, $limitfrom, $limitnum, $lti, $info) {
 
         $withcapability = '';
         $exclude = array();
@@ -127,7 +127,7 @@ class memberships extends service_base {
             $limitfrom = 0;
             $limitnum = 0;
         }
-        $json = self::users_to_json($resource, $users, $id, $tool, $exclude, $limitfrom, $limitnum, $lti, $info);
+        $json = self::users_to_json($resource, $users, $contextid, $tool, $exclude, $limitfrom, $limitnum, $lti, $info);
 
         return $json;
     }
@@ -140,7 +140,7 @@ class memberships extends service_base {
      *
      * @param \mod_lti\local\ltiservice\resource_base $resource       Resource handling the request
      * @param array  $users               Array of user records
-     * @param string $id                  Course ID
+     * @param string $contextid                  Course ID
      * @param object $tool                Tool instance object
      * @param array  $exclude             Array of user records to be excluded from the response
      * @param int    $limitfrom           Position of first record to be returned
@@ -150,8 +150,9 @@ class memberships extends service_base {
      *
      * @return string
      */
-    private static function users_to_json($resource, $users, $id, $tool, $exclude, $limitfrom, $limitnum,
+    private static function users_to_json($resource, $users, $contextid, $tool, $exclude, $limitfrom, $limitnum,
                                          $lti, $info) {
+        global $DB;
         $json = <<< EOD
 {
   "@context" : "http://purl.imsglobal.org/ctx/lis/v2/MembershipContainer",
@@ -177,7 +178,7 @@ EOD;
     "@type" : "LISMembershipContainer",
     "membershipSubject" : {
       "@type" : "Context",
-      "contextId" : "{$id}",
+      "contextId" : "{$contextid}",
       "membership" : [
 EOD;
         $enabledcapabilities = lti_get_enabled_capabilities($tool);
@@ -195,7 +196,7 @@ EOD;
             $member->{"@type" } = 'LISPerson';
             $membership = new \stdClass();
             $membership->status = 'Active';
-            $membership->role = explode(',', lti_get_ims_role($user->id, null, $id, true));
+            $membership->role = explode(',', lti_get_ims_role($user->id, null, $contextid, true));
 
             $toolconfig = lti_get_type_type_config($tool->id);
             $instanceconfig = null;
@@ -227,21 +228,19 @@ EOD;
             ];
 
             if (!is_null($lti)) {
-                $includedcapabilities['Result.sourcedId']  = ['type' => 'result',
-                                            'member.field' => 'resultSourcedId',
-                                            'source.value' => json_encode(lti_build_sourcedid($lti->id,
-                                                                                             $user->id,
-                                                                                             $lti->servicesalt,
-                                                                                             $lti->typeid))];
                 $message = new \stdClass();
                 $message->message_type = 'basic-lti-launch-request';
-                if (!empty($lti->servicesalt)) {
-                    $message->lis_result_sourcedid = $includedcapabilities['Result.sourcedId']['source.value']; 
-                }
-                $member->message = $message;
-                                                                                            }
-            $hasmemberships = $toolconfig->ltiservice_memberships == self::MEMBERSHIP_ENABLED;
+                $conditions = array('courseid' => $contextid, 'itemtype' => 'mod',
+                        'itemmodule' => 'lti', 'iteminstance' => $lti->id);
 
+                if (!empty($lti->servicesalt) && $DB->record_exists('grade_items', $conditions)) {
+                    $message->lis_result_sourcedid = json_encode(lti_build_sourcedid($lti->id,
+                                                                                     $user->id,
+                                                                                     $lti->servicesalt,
+                                                                                     $lti->typeid));
+                }
+                $membership->message = $message;
+            }
 
             foreach ($includedcapabilities as $capabilityname => $capability) {
                 if ($islti2) {
@@ -251,9 +250,7 @@ EOD;
                 } else {
                     if (($capability['type'] === 'id')
                      || ($capability['type'] === 'name' && $isallowedlticonfig['name'])
-                     || ($capability['type'] === 'email' && $isallowedlticonfig['email'])
-                     || ($capability['type'] === 'result' && !empty($lti->servicesalt))) {
-                        // keeping result sourced id here for backward compatibility in case this was actually used...
+                     || ($capability['type'] === 'email' && $isallowedlticonfig['email'])) {
                         $member->{$capability['member.field']} = $capability['source.value'];
                     }
                 }
@@ -278,8 +275,9 @@ EOD;
 
     /**
      * Determines whether a user attribute may be used as part of LTI membership
-     * @param array $lticonfig Contains configuration for system specific tool,
-     *                          instance specific LTI tool and name of the config field to check
+     * @param object            $toolconfig      Tool config
+     * @param object            $instanceconfig  Tool instance config
+     * @param array             $fields          Set of fields to return if allowed or not
      * @return array Verification which associates an attribute with a boolean (allowed or not)
      */
     private static function is_allowed_field_set($toolconfig, $instanceconfig, $fields) {
@@ -317,11 +315,11 @@ EOD;
     /**
      * Retrieves string from lang file
      *
-     * @param string $identifier
+     * @param string $contextidentifier
      * @return string
      */
-    private function get_string($identifier) {
-        return get_string($identifier, self::LTI_SERVICE_COMPONENT);
+    private function get_string($contextidentifier) {
+        return get_string($contextidentifier, self::LTI_SERVICE_COMPONENT);
     }
 
     /**
