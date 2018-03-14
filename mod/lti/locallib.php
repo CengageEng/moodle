@@ -196,7 +196,7 @@ function lti_get_launch_data($instance) {
         $customstr = $typeconfig['customparameters'];
     }
     $requestparams = array_merge($requestparams, lti_build_custom_parameters($toolproxy, $tool, $instance, $allparams, $customstr,
-        $instance->instructorcustomparameters, $islti2, $typeconfig));
+        $instance->instructorcustomparameters, $islti2));
 
     $launchcontainer = lti_get_launch_container($instance, $typeconfig);
     $returnurlparams = array('course' => $course->id,
@@ -573,7 +573,7 @@ function lti_build_standard_request($instance, $orgid, $islti2, $messagetype = '
  * @return array                    Custom parameters
  */
 function lti_build_custom_parameters($toolproxy, $tool, $instance, $params,
-                                     $customstr, $instructorcustomstr, $islti2, $typeconfig) {
+                                     $customstr, $instructorcustomstr, $islti2) {
 
     // Concatenate the custom parameters from the administrator and the instructor
     // Instructor parameters are only taken into consideration if the administrator
@@ -732,7 +732,7 @@ function lti_build_content_item_selection_request($id, $course, moodle_url $retu
     if (!empty($typeconfig['customparameters'])) {
         $customstr = $typeconfig['customparameters'];
     }
-    $customparams = lti_build_custom_parameters($toolproxy, $tool, $instance, $requestparams, $customstr, '', $islti2, $typeconfig);
+    $customparams = lti_build_custom_parameters($toolproxy, $tool, $instance, $requestparams, $customstr, '', $islti2);
     $requestparams = array_merge($requestparams, $customparams);
 
     // Allow request params to be updated by sub-plugins.
