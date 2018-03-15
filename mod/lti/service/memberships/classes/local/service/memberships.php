@@ -302,24 +302,14 @@ EOD;
     public function get_configuration_options(&$mform) {
         $elementname = 'ltiservice_memberships';
         $options = [
-            $this->get_string('notallow'),
-            $this->get_string('allow')
+            get_string('notallow', self::LTI_SERVICE_COMPONENT),
+            get_string('allow', self::LTI_SERVICE_COMPONENT)
         ];
 
-        $mform->addElement('select', $elementname, $this->get_string($elementname), $options);
+        $mform->addElement('select', $elementname, get_string($elementname, self::LTI_SERVICE_COMPONENT), $options);
         $mform->setType($elementname, 'int');
         $mform->setDefault($elementname, 0);
         $mform->addHelpButton($elementname, $elementname, self::LTI_SERVICE_COMPONENT);
-    }
-
-    /**
-     * Retrieves string from lang file
-     *
-     * @param string $contextidentifier
-     * @return string
-     */
-    private function get_string($contextidentifier) {
-        return get_string($contextidentifier, self::LTI_SERVICE_COMPONENT);
     }
 
     /**
