@@ -26,27 +26,29 @@
 
 namespace ltiservice_memberships\local\resource;
 
-use \mod_lti\local\ltiservice\service_base;
+use mod_lti\local\ltiservice\resource_base;
 use ltiservice_memberships\local\service\memberships;
-use core_availability\info;
 use core_availability\info_module;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * A resource implementing Link Memberships.
+ * The link membership is no longer defined in the published
+ * version of the LTI specification. It is replaced by the 
+ * rlid parameter in the context membership URL.
  *
  * @package    ltiservice_memberships
  * @since      Moodle 3.0
  * @copyright  2015 Vital Source Technologies http://vitalsource.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
+class linkmemberships extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_memberships\local\service\memberships $service Service instance
+     * @param \ltiservice_memberships\local\service\memberships $service Service instance
      */
     public function __construct($service) {
 
@@ -62,10 +64,10 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
-        global $CFG, $DB;
+        global $DB;
 
         $params = $this->parse_template();
         $linkid = $params['link_id'];
@@ -84,9 +86,15 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
                 throw new \Exception(null, 404);
             }
             $tool = $DB->get_record('lti_types', array('id' => $lti->typeid));
-            $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid));
-            if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
-                throw new \Exception(null, 401);
+            if ($tool->toolproxyid == 0) { // We wil use the same permission for this and contextmembers.
+                if (!$this->check_type($lti->typeid, $lti->course, 'ToolProxyBinding.memberships.url:get', $body = null)) {
+                    throw new \Exception(null, 403);
+                }
+            } else {
+                $toolproxy = $DB->get_record('lti_tool_proxies', array('id' => $tool->toolproxyid));
+                if (!$this->check_tool_proxy($toolproxy->guid, $response->get_request_data())) {
+                    throw new \Exception(null, 403);
+                }
             }
             if (!($course = $DB->get_record('course', array('id' => $lti->course), 'id', IGNORE_MISSING))) {
                 throw new \Exception(null, 404);
@@ -101,7 +109,6 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
             if ($info->is_available_for_all()) {
                 $info = null;
             }
-
             $json = memberships::get_users_json($this, $context, $lti->course, $tool, $role, $limitfrom, $limitnum, $lti, $info);
 
             $response->set_content_type($this->formats[0]);
@@ -114,6 +121,22 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
     }
 
     /**
+     * get permissions from the config of the tool for that resource
+     *
+     * @param string $typeid
+     *
+     * @return array with the permissions related to this resource by the $lti_type or null if none.
+     */
+    public function get_permissions($typeid) {
+        $tool = lti_get_type_type_config($typeid);
+        if ($tool->memberships == '1') {
+            return array('ToolProxyBinding.memberships.url:get');
+        } else {
+            return array();
+        }
+    }
+
+    /**
      * Parse a value for custom parameter substitution variables.
      *
      * @param string $value String to be parsed
@@ -122,13 +145,14 @@ class linkmemberships extends \mod_lti\local\ltiservice\resource_base {
      */
     public function parse_value($value) {
 
-        $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
-        if (!empty($id)) {
-            $cm = get_coursemodule_from_id('lti', $id, 0, false, MUST_EXIST);
-            $this->params['link_id'] = $cm->instance;
+        if (strpos($value, '$ToolProxyBinding.memberships.url') !== false) {
+            $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
+            if (!empty($id)) {
+                $cm = get_coursemodule_from_id('lti', $id, 0, false, MUST_EXIST);
+                $this->params['link_id'] = $cm->instance;
+            }
+            $value = str_replace('$LtiLink.memberships.url', parent::get_endpoint(), $value);
         }
-        $value = str_replace('$LtiLink.memberships.url', parent::get_endpoint(), $value);
-
         return $value;
 
     }

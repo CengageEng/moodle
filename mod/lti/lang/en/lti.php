@@ -70,7 +70,6 @@ $string['addnewapp'] = 'Enable external application';
 $string['addserver'] = 'Add new trusted server';
 $string['addtype'] = 'Add preconfigured tool';
 $string['allow'] = 'Allow';
-$string['allowinstructorcustom'] = 'Allow teachers to add custom parameters';
 $string['allowsetting'] = 'Allow tool to store 8K of settings in Moodle';
 $string['always'] = 'Always';
 $string['automatic'] = 'Automatic, based on tool URL';
@@ -511,6 +510,9 @@ A base URL of *quiz.tool.com* would match the following:
 If two different tool configurations are for the same domain, the most specific match will be used.
 
 You can also insert a cartridge URL if you have one and the details for the tool will be automatically filled.';
+$string['toolurl_contentitemselectionrequest'] = 'Content Selection URL';
+$string['toolurl_contentitemselectionrequest_help'] = 'The Content Selection URL will be used to launch the
+content selection page from the tool provider. If it is empty, the Tool URL will be used';
 $string['typename'] = 'Tool name';
 $string['typename_help'] = 'The tool name is used to identify the tool provider within Moodle. The name entered will be visible
 to teachers when adding external tools within courses.';

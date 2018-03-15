@@ -26,6 +26,7 @@
 
 namespace ltiservice_profile\local\resource;
 
+use mod_lti\local\ltiservice\resource_base;
 use \mod_lti\local\ltiservice\service_base;
 
 defined('MOODLE_INTERNAL') || die();
@@ -38,12 +39,12 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2014 Vital Source Technologies http://vitalsource.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class profile extends \mod_lti\local\ltiservice\resource_base {
+class profile extends resource_base {
 
     /**
      * Class constructor.
      *
-     * @param ltiservice_profile\local\resource\profile $service Service instance
+     * @param service_base $service Service instance
      */
     public function __construct($service) {
 
@@ -76,10 +77,9 @@ class profile extends \mod_lti\local\ltiservice\resource_base {
     /**
      * Execute the request for this resource.
      *
-     * @param mod_lti\local\ltiservice\response $response  Response object for this request.
+     * @param \mod_lti\local\ltiservice\response $response  Response object for this request.
      */
     public function execute($response) {
-
         global $CFG;
 
         $version = service_base::LTI_VERSION2P0;
@@ -104,6 +104,7 @@ class profile extends \mod_lti\local\ltiservice\resource_base {
             foreach ($services as $name => $location) {
                 if (in_array($name, $serviceofferedarr)) {
                     $classname = "\\ltiservice_{$name}\\local\\service\\{$name}";
+                    /** @var service_base $service */
                     $service = new $classname();
                     $service->set_tool_proxy($toolproxy);
                     $resources = $service->get_resources();
@@ -218,9 +219,9 @@ EOD;
      * @return string
      */
     public function parse_value($value) {
-
-        $value = str_replace('$ToolConsumerProfile.url', $this->get_endpoint(), $value);
-
+        if (strpos($value, '$ToolConsumerProfile.url') !== false) {
+            $value = str_replace('$ToolConsumerProfile.url', $this->get_endpoint(), $value);
+        }
         return $value;
 
     }
