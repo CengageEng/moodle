@@ -103,7 +103,7 @@ define(
             new FormField('icon', FormField.TYPES.TEXT, true, ''),
             new FormField('secureicon', FormField.TYPES.TEXT, true, ''),
             new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0),
-            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, ''),
+            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, '')
         ];
 
         /**
