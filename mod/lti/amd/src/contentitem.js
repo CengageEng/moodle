@@ -38,6 +38,7 @@ define(
     ],
     function($, notification, str, templates, FormField, ModalFactory, ModalEvents) {
         var dialogue;
+        var doneCallback;
         var contentItem = {
             /**
              * Init function.
@@ -45,7 +46,8 @@ define(
              * @param {string} url The URL for the content item selection.
              * @param {object} postData The data to be sent for the content item selection request.
              */
-            init: function(url, postData) {
+            init: function(url, postData, cb) {
+                doneCallback = cb;
                 var context = {
                     url: url,
                     postData: postData
@@ -100,7 +102,8 @@ define(
             new FormField('instructorcustomparameters', FormField.TYPES.TEXT, true, ''),
             new FormField('icon', FormField.TYPES.TEXT, true, ''),
             new FormField('secureicon', FormField.TYPES.TEXT, true, ''),
-            new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0)
+            new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0),
+            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, ''),
         ];
 
         /**
@@ -123,6 +126,7 @@ define(
                 }
                 field.setFieldValue(value);
             }
+            if (doneCallback) doneCallback();
         };
 
         return contentItem;
