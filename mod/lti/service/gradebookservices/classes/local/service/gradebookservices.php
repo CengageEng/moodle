@@ -378,15 +378,15 @@ class gradebookservices extends service_base {
     }
 
     /**
-     * Get the JSON representation of the grade item.
-     *
+     * Get the json object representation of the grade item 
+     * 
      * @param object $item Grade Item record
      * @param string $endpoint Endpoint for lineitems container request
      * @param string $typeid
      *
-     * @return string
+     * @return object
      */
-    public static function item_to_json($item, $endpoint, $typeid) {
+    public static function item_for_json($item, $endpoint, $typeid) {
 
         $lineitem = new \stdClass();
         if (is_null($typeid)) {
@@ -410,22 +410,21 @@ class gradebookservices extends service_base {
                 $lineitem->ltiLinkId = strval($item->iteminstance);
             }
         }
-        $json = json_encode($lineitem, JSON_UNESCAPED_SLASHES);
 
-        return $json;
+        return $lineitem;
 
     }
 
     /**
-     * Get the JSON representation of the grade.
+     * Get the object matching the JSON representation of the result.
      *
      * @param object  $grade              Grade record
      * @param string  $endpoint           Endpoint for lineitem
      * @param int  $typeid                The id of the type to include in the result url.
      *
-     * @return string
+     * @return object
      */
-    public static function result_to_json($grade, $endpoint, $typeid) {
+    public static function result_for_json($grade, $endpoint, $typeid) {
 
         if (is_null($typeid)) {
             $id = "{$endpoint}/results?user_id={$grade->userid}";
@@ -448,10 +447,7 @@ class gradebookservices extends service_base {
             }
             $result->timestamp = date('c', $grade->timemodified);
         }
-        $json = json_encode($result, JSON_UNESCAPED_SLASHES);
-
-        return $json;
-
+        return $result;
     }
 
     /**

@@ -224,19 +224,12 @@ class lineitems extends resource_base {
             }
         }
 
-        $json = <<< EOD
-  [
-EOD;
+        $jsonitems=[];
         $endpoint = parent::get_endpoint();
-        $sep = '        ';
         foreach ($items as $item) {
-            $json .= $sep . gradebookservices::item_to_json($item, $endpoint, $typeid);
-            $sep = ",\n        ";
+            array_push($jsonitems, gradebookservices::item_for_json($item, $endpoint, $typeid));
         }
-        $json .= <<< EOD
 
-  ]
-EOD;
         if (isset($canonicalpage) && ($canonicalpage)) {
             $links = 'Link: <' . $firstpage . '>; rel=“first”';
             if (!(is_null($prevpage))) {
@@ -249,7 +242,7 @@ EOD;
             $links .= ', <' . $lastpage . '>; rel=“last”';
             $response->add_additional_header($links);
         }
-        return $json;
+        return json_encode($jsonitems);
     }
 
     /**

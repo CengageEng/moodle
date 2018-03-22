@@ -211,24 +211,17 @@ class results extends resource_base {
             }
         }
 
-        $json = <<< EOD
-  [
-EOD;
+        $jsonresults = [];
         $lineitem = new lineitem($this->get_service());
         $endpoint = $lineitem->get_endpoint();
-        $sep = "\n        ";
         if ($grades) {
             foreach ($grades as $grade) {
                 if (!empty($grade->timemodified)) {
-                    $json .= $sep . gradebookservices::result_to_json($grade, $endpoint, $typeid);
-                    $sep = ",\n        ";
+                    array_push($jsonresults, gradebookservices::result_for_json($grade, $endpoint, $typeid));
                 }
             }
         }
-        $json .= <<< EOD
 
-  ]
-EOD;
         if (isset($canonicalpage) && ($canonicalpage)) {
             $links = 'Link: <' . $firstpage . '>; rel=“first”';
             if (!(is_null($prevpage))) {
@@ -241,7 +234,7 @@ EOD;
             $links .= ', <' . $lastpage . '>; rel=“last”';
             $response->add_additional_header($links);
         }
-        return $json;
+        return json_encode($jsonresults);
     }
 
     /**
