@@ -964,6 +964,7 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
             }
             $config->instructorcustomparameters = implode("\n", $customparameters);
         }
+        $config->contentitemjson = json_encode($item);
     }
     return $config;
 }

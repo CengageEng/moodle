@@ -126,6 +126,14 @@ define(
                 }
                 field.setFieldValue(value);
             }
+
+            // Pass in the original content item for post processing by subplugins
+            var contentitem = '';
+            if ($.type(returnData['contentitemjson']) !== 'undefined') {
+                contentitem = returnData['contentitemjson'];
+            }
+            $('input[name=lti_content_item]').val(contentitem);
+
             if (doneCallback) doneCallback();
         };
 

@@ -127,6 +127,9 @@ function lti_add_instance($lti, $mform) {
         lti_grade_item_update($lti);
     }
 
+    if (isset($lti->lti_content_item)) {
+        debugging('item: '.$lti->lti_content_item);
+    }
     $completiontimeexpected = !empty($lti->completionexpected) ? $lti->completionexpected : null;
     \core_completion\api::update_completion_date_event($lti->coursemodule, 'lti', $lti->id, $completiontimeexpected);
 
