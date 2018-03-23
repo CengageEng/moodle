@@ -195,17 +195,6 @@ abstract class service_base {
     }
 
     /**
-     * At the end of the creation of an LTI link. If the link was created off a content
-     * item selection request, the content item payload is passed to services for
-     * additional service related handling.
-     *
-     * @param object $lti          The lti link being added.
-     * @param object $contentitem     The course id.
-     */
-    public function post_add_lti_instance($lti, $contentitem = null) {
-    }
-
-    /**
      * Return an array of key/values to add to the launch parameters.
      *
      * @param string $messagetype  'basic-lti-launch-request' or 'ContentItemSelectionRequest'.
