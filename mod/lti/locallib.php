@@ -935,7 +935,7 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
                         $sc = $lineitem->scoreConstraints;
                         if (isset($sc->totalMaximum)) {
                             $maxscore = $sc->totalMaximum;
-                        } else if (isset($sc->normalMaximum)) { 
+                        } else if (isset($sc->normalMaximum)) {
                             $maxscore = $sc->normalMaximum;
                         }
                     }

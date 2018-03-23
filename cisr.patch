@@ -1,0 +1,121 @@
+diff --git a/mod/lti/amd/build/contentitem.min.js b/mod/lti/amd/build/contentitem.min.js
+index 03124159e5..d1120d8344 100644
+Binary files a/mod/lti/amd/build/contentitem.min.js and b/mod/lti/amd/build/contentitem.min.js differ
+diff --git a/mod/lti/amd/src/contentitem.js b/mod/lti/amd/src/contentitem.js
+index a6dad9222b..e607819bf9 100644
+--- a/mod/lti/amd/src/contentitem.js
++++ b/mod/lti/amd/src/contentitem.js
+@@ -38,6 +38,7 @@ define(
+     ],
+     function($, notification, str, templates, FormField, ModalFactory, ModalEvents) {
+         var dialogue;
++        var doneCallback;
+         var contentItem = {
+             /**
+              * Init function.
+@@ -45,7 +46,8 @@ define(
+              * @param {string} url The URL for the content item selection.
+              * @param {object} postData The data to be sent for the content item selection request.
+              */
+-            init: function(url, postData) {
++            init: function(url, postData, cb) {
++                doneCallback = cb;
+                 var context = {
+                     url: url,
+                     postData: postData
+@@ -100,7 +102,9 @@ define(
+             new FormField('instructorcustomparameters', FormField.TYPES.TEXT, true, ''),
+             new FormField('icon', FormField.TYPES.TEXT, true, ''),
+             new FormField('secureicon', FormField.TYPES.TEXT, true, ''),
+-            new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0)
++            new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0),
++            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, ''),
++            new FormField('cmidnumber', FormField.TYPES.TEXT, false, '')
+         ];
+ 
+         /**
+@@ -123,6 +127,10 @@ define(
+                 }
+                 field.setFieldValue(value);
+             }
++
++            if (doneCallback) {
++                doneCallback();
++            }
+         };
+ 
+         return contentItem;
+diff --git a/mod/lti/classes/local/ltiservice/service_base.php b/mod/lti/classes/local/ltiservice/service_base.php
+index 5102a8ed01..f4be5b7253 100644
+--- a/mod/lti/classes/local/ltiservice/service_base.php
++++ b/mod/lti/classes/local/ltiservice/service_base.php
+@@ -210,7 +210,6 @@ abstract class service_base {
+     public function get_launch_parameters($messagetype, $courseid, $userid, $typeid, $modlti = null) {
+         return array();
+     }
+-
+     /**
+      * Get the path for service requests.
+      *
+diff --git a/mod/lti/locallib.php b/mod/lti/locallib.php
+index 7f89bff40f..1e8a891ebc 100644
+--- a/mod/lti/locallib.php
++++ b/mod/lti/locallib.php
+@@ -923,9 +923,33 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
+         } else {
+             $config->typeid = $typeid;
+         }
++        $config->instructorchoiceacceptgrades = LTI_SETTING_NEVER;
++        if (!$islti2 && isset($typeconfig['acceptgrades'])) {
++            $acceptgrades = $typeconfig['acceptgrades'];
++            if ($acceptgrades == LTI_SETTING_DELEGATE) {
++                if (isset($item->lineItem)) {
++                    $lineitem = $item->lineItem;
++                    $config->instructorchoiceacceptgrades = LTI_SETTING_ALWAYS;
++                    $maxscore = 100;
++                    if(isset($lineitem->scoreConstraints)) {
++                        $sc = $lineitem->scoreConstraints;
++                        if (isset($sc->totalMaximum)) {
++                            $maxscore = $sc->totalMaximum;
++                        } else if (isset($sc->normalMaximum)) {
++                            $maxscore = $sc->normalMaximum;
++                        }
++                    }
++                    $config->grade_modgrade_point = $maxscore;
++                    if (isset($lineitem->assignedActivity) && isset($lineitem->assignedActivity->activityId)) {
++                        $config->cmidnumber = $lineitem->assignedActivity->activityId;
++                    }
++                }
++            } else {
++                $config->instructorchoiceacceptgrades = $acceptgrades;
++            }
++        }
+         $config->instructorchoicesendname = LTI_SETTING_NEVER;
+         $config->instructorchoicesendemailaddr = LTI_SETTING_NEVER;
+-        $config->instructorchoiceacceptgrades = LTI_SETTING_NEVER;
+         $config->launchcontainer = LTI_LAUNCH_CONTAINER_DEFAULT;
+         if (isset($item->placementAdvice->presentationDocumentTarget)) {
+             if ($item->placementAdvice->presentationDocumentTarget === 'window') {
+@@ -943,6 +967,7 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
+             }
+             $config->instructorcustomparameters = implode("\n", $customparameters);
+         }
++        $config->contentitemjson = json_encode($item);
+     }
+     return $config;
+ }
+diff --git a/mod/lti/mod_form.js b/mod/lti/mod_form.js
+index d158cd3f3b..f341ccc63a 100644
+--- a/mod/lti/mod_form.js
++++ b/mod/lti/mod_form.js
+@@ -90,7 +90,9 @@
+                     };
+ 
+                     require(['mod_lti/contentitem'], function(contentitem) {
+-                        contentitem.init(contentItemUrl, postData);
++                        contentitem.init(contentItemUrl, postData, function() {
++                            M.mod_lti.editor.toggleGradeSection();
++                        });
+                     });
+                 }
+             });
