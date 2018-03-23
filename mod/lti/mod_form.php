@@ -233,11 +233,6 @@ class mod_lti_mod_form extends moodleform_mod {
         // Add standard course module grading elements.
         $this->standard_grading_coursemodule_elements();
 
-        // Additional attribute for grade passed in Content Item payload
-        $mform->addElement('hidden', 'lti_content_item', '');
-        $mform->settype('lti_content_item', PARAM_TEXT);
-
-
         // Add standard elements, common to all modules.
         $this->standard_coursemodule_elements();
         $mform->setAdvanced('cmidnumber');

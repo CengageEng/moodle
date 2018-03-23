@@ -103,7 +103,8 @@ define(
             new FormField('icon', FormField.TYPES.TEXT, true, ''),
             new FormField('secureicon', FormField.TYPES.TEXT, true, ''),
             new FormField('launchcontainer', FormField.TYPES.SELECT, true, 0),
-            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, '')
+            new FormField('grade_modgrade_point', FormField.TYPES.TEXT, false, ''),
+            new FormField('cmidnumber', FormField.TYPES.TEXT, false, '')
         ];
 
         /**
@@ -127,14 +128,9 @@ define(
                 field.setFieldValue(value);
             }
 
-            // Pass in the original content item for post processing by subplugins
-            var contentitem = '';
-            if ($.type(returnData['contentitemjson']) !== 'undefined') {
-                contentitem = returnData['contentitemjson'];
+            if (doneCallback) {
+                doneCallback();
             }
-            $('input[name=lti_content_item]').val(contentitem);
-
-            if (doneCallback) doneCallback();
         };
 
         return contentItem;

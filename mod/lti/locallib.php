@@ -940,6 +940,9 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
                         }
                     }
                     $config->grade_modgrade_point = $maxscore;
+                    if (isset($lineitem->assignedActivity) && isset($lineitem->assignedActivity->activityId)) {
+                        $config->cmidnumber = $lineitem->assignedActivity->activityId;
+                    }
                 }
             } else {
                 $config->instructorchoiceacceptgrades = $acceptgrades;
