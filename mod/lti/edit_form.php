@@ -69,6 +69,7 @@ class mod_lti_edit_types_form extends moodleform {
      */
     public function definition() {
         global $CFG;
+        $text_options = ['size' => '64'];
 
         $mform    =& $this->_form;
 
@@ -93,17 +94,6 @@ class mod_lti_edit_types_form extends moodleform {
             $mform->addRule('lti_toolurl', null, 'required', null, 'client');
         } else {
             $mform->disabledIf('lti_toolurl', null);
-        }
-
-        if (!$istool) {
-            $mform->addElement('text', 'lti_resourcekey', get_string('resourcekey_admin', 'lti'));
-            $mform->setType('lti_resourcekey', PARAM_TEXT);
-            $mform->addHelpButton('lti_resourcekey', 'resourcekey_admin', 'lti');
-            $mform->setForceLtr('lti_resourcekey');
-
-            $mform->addElement('passwordunmask', 'lti_password', get_string('password_admin', 'lti'));
-            $mform->setType('lti_password', PARAM_TEXT);
-            $mform->addHelpButton('lti_password', 'password_admin', 'lti');
         }
 
         if ($istool) {
@@ -183,6 +173,60 @@ class mod_lti_edit_types_form extends moodleform {
         $mform->setType('lti_secureicon', PARAM_URL);
         $mform->setAdvanced('lti_secureicon');
         $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
+ 
+        if (!$istool) {
+
+            $mform->addElement('header', 'security', get_string('security', 'lti'));
+            $securityOptions = $mform->addElement('select', 'securityoption', 
+                                                  get_string('security_option', 'lti'),
+                                                  ['lti11'=>'LTI 1.1 key and secret', 'lti13'=>'LTI 1.3 public keys']);
+            $securityOptions->setSelected('lti11');
+
+            // LTI 1.1 Security Options
+            $mform->addElement('text', 'lti_resourcekey', get_string('resourcekey_admin', 'lti'));
+            $mform->setType('lti_resourcekey', PARAM_TEXT);
+            $mform->addHelpButton('lti_resourcekey', 'resourcekey_admin', 'lti');
+            $mform->setForceLtr('lti_resourcekey');
+            $mform->hideIf('lti_resourcekey', 'securityoption', 'neq', 'lti11');
+
+            $mform->addElement('passwordunmask', 'lti_password', get_string('password_admin', 'lti'));
+            $mform->setType('lti_password', PARAM_TEXT);
+            $mform->addHelpButton('lti_password', 'password_admin', 'lti');
+            $mform->hideIf('lti_password', 'securityoption', 'neq', 'lti11');
+
+            // LTI 1.3 Security Options
+            $mform->addElement('text', 'issuer', get_string('issuer', 'lti'), $text_options);
+            $mform->hideIf('issuer', 'securityoption', 'neq', 'lti13');
+            $mform->setDefault('issuer',$this->_customdata['issuer']);
+            $mform->setType('issuer', PARAM_TEXT);
+            $mform->disabledIf('issuer', 'securityoption', 'eq', 'lti13');
+            
+            $mform->addElement('text', 'keyseturl', get_string('issuer_keyset_url', 'lti'), $text_options);
+            $mform->setType('keyseturl', PARAM_TEXT);
+            $mform->setDefault('keyseturl',$this->_customdata['keyseturl']);
+            $mform->hideIf('keyseturl', 'securityoption', 'neq', 'lti13');
+            $mform->disabledIf('keyseturl', 'securityoption', 'eq', 'lti13');
+
+            $mform->addElement('text', 'accesstokenurl', get_string('token_url', 'lti'), $text_options);
+            $mform->setType('accesstokenurl', PARAM_TEXT);
+            $mform->setDefault('accesstokenurl',$this->_customdata['accesstokenurl']);
+            $mform->hideIf('accesstokenurl', 'securityoption', 'neq', 'lti13');
+            $mform->disabledIf('accesstokenurl', 'securityoption', 'eq', 'lti13');
+
+            $mform->addElement('text', 'clientid', get_string('client_id', 'lti'), $text_options);
+            $mform->setType('clientid', PARAM_TEXT);
+            $mform->hideIf('clientid', 'securityoption', 'neq', 'lti13');
+            $mform->disabledIf('clientid', 'securityoption', 'eq', 'lti13');
+
+            $mform->addElement('text', 'deploymentid', get_string('deployment_id', 'lti'), $text_options);
+            $mform->setType('deploymentid', PARAM_TEXT);
+            $mform->hideIf('deploymentid', 'securityoption', 'neq', 'lti13');
+            $mform->disabledIf('deploymentid', 'securityoption', 'eq', 'lti13');
+
+            $mform->addElement('textarea', 'publickey', get_string("tool_public_key", "lti"), 'wrap="virtual" rows="5" cols="80"');
+            $mform->setType('publickey', PARAM_TEXT);
+            $mform->hideIf('publickey', 'securityoption', 'neq', 'lti13');
+        } 
 
         if (!$istool) {
             // Display the lti advantage services.

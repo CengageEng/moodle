@@ -348,6 +348,14 @@ along with the consumer key from the tool provider.
 
 Tools which do not require secure communication from Moodle and do not provide additional services (such as grade reporting)
 may not require a shared secret.';
+$string['security'] = 'Security';
+$string['security_option'] = 'LTI Security Option';
+$string['issuer'] = 'Issuer';
+$string['token_url'] = 'Access Token URL';
+$string['issuer_keyset_url'] = 'Public Keyset URL';
+$string['client_id'] = 'Client ID';
+$string['deployment_id'] = 'Deployment ID';
+$string['tool_public_key'] = 'Tool Public Key (PEM format)';
 $string['pending'] = 'Pending';
 $string['pluginadministration'] = 'External tool administration';
 $string['pluginname'] = 'External tool';

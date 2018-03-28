@@ -118,8 +118,13 @@ if (lti_request_is_using_ssl() && !empty($type->lti_secureicon)) {
 } else {
     $type->oldicon = $type->lti_icon;
 }
+$options = ['isadmin' => true, 
+            'istool' => false, 
+            'issuer'=>'http://moodle.zeedeyou.com',
+            'accesstokenurl'=>'http://moodle.zeedeeyou.com/mod/lti/accesstoken.php',
+            'keyseturl'=>'http://moodle.zeedeeyou.com/mod/lti/keyset.php'];
 
-$form = new mod_lti_edit_types_form($pageurl, (object)array('isadmin' => true, 'istool' => false));
+$form = new mod_lti_edit_types_form($pageurl, $options);
 
 if ($data = $form->get_data()) {
     $type = new stdClass();
@@ -149,6 +154,8 @@ echo $OUTPUT->box_start('generalbox');
 
 if ($action == 'update') {
     $form->set_data($type);
+} else {
+    $form->set_data(['clientid'=>'22222', 'deploymentid'=>'333333']);
 }
 
 $form->display();
