@@ -86,6 +86,8 @@ class tool_mobile_external_testcase extends externallib_advanced_testcase {
             'mobilecssurl' => '',
             'tool_mobile_disabledfeatures' => '',
             'launchurl' => "$CFG->wwwroot/$CFG->admin/tool/mobile/launch.php",
+            'country' => $CFG->country,
+            'agedigitalconsentverification' => \core_auth\digital_consent::is_age_digital_consent_verification_enabled(),
             'warnings' => array()
         );
         $this->assertEquals($expected, $result);
@@ -98,12 +100,16 @@ class tool_mobile_external_testcase extends externallib_advanced_testcase {
         set_config('logo', 'mock.png', 'core_admin');
         set_config('logocompact', 'mock.png', 'core_admin');
         set_config('forgottenpasswordurl', 'mailto:fake@email.zy'); // Test old hack.
+        set_config('agedigitalconsentverification', 1);
 
         list($authinstructions, $notusedformat) = external_format_text($authinstructions, FORMAT_MOODLE, $context->id);
         $expected['registerauth'] = 'email';
         $expected['authinstructions'] = $authinstructions;
         $expected['typeoflogin'] = api::LOGIN_VIA_BROWSER;
         $expected['forgottenpasswordurl'] = ''; // Expect empty when it's not an URL.
+        $expected['agedigitalconsentverification'] = true;
+        $expected['supportname'] = $CFG->supportname;
+        $expected['supportemail'] = $CFG->supportemail;
 
         if ($logourl = $OUTPUT->get_logo_url()) {
             $expected['logourl'] = $logourl->out(false);
@@ -150,6 +156,7 @@ class tool_mobile_external_testcase extends externallib_advanced_testcase {
             array('name' => 'newsitems', 'value' => $SITE->newsitems),
             array('name' => 'commentsperpage', 'value' => $CFG->commentsperpage),
             array('name' => 'sitepolicy', 'value' => $mysitepolicy),
+            array('name' => 'sitepolicyhandler', 'value' => ''),
             array('name' => 'disableuserimages', 'value' => $CFG->disableuserimages),
             array('name' => 'mygradesurl', 'value' => user_mygrades_url()->out(false)),
             array('name' => 'tool_mobile_forcelogout', 'value' => 0),

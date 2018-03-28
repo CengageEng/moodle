@@ -410,6 +410,54 @@ class core_questionlib_testcase extends advanced_testcase {
         $this->assertEquals(0, $DB->count_records('question', $criteria));
     }
 
+    /**
+     * This function tests the question_delete_course_category function when it is supposed to move question categories.
+     *
+     * @param bool $feedback Whether to return feedback
+     * @dataProvider provider_feedback
+     */
+    public function test_question_delete_course_category_move_qcats($feedback) {
+        global $DB;
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+
+        list($category1, $course1, $quiz1, $qcat1, $questions1) = $this->setup_quiz_and_questions('category');
+        list($category2, $course2, $quiz2, $qcat2, $questions2) = $this->setup_quiz_and_questions('category');
+
+        $questionsinqcat1 = count($questions1);
+        $questionsinqcat2 = count($questions2);
+
+        // Test that the feedback works.
+        if ($feedback) {
+            $a = new stdClass();
+            $a->oldplace = context::instance_by_id($qcat1->contextid)->get_context_name();
+            $a->newplace = context::instance_by_id($qcat2->contextid)->get_context_name();
+            $this->expectOutputRegex('|'.get_string('movedquestionsandcategories', 'question', $a).'|');
+        }
+        question_delete_course_category($category1, $category2, $feedback);
+
+        // Verify category not deleted.
+        $criteria = array('id' => $qcat1->id);
+        $this->assertEquals(1, $DB->count_records('question_categories', $criteria));
+
+        // Verify questions are moved.
+        $criteria = array('category' => $qcat1->id);
+        $params = array($qcat2->contextid);
+        $actualquestionscount = $DB->count_records_sql("SELECT COUNT(*)
+                                                          FROM {question} q
+                                                          JOIN {question_categories} qc ON q.category = qc.id
+                                                         WHERE qc.contextid = ?", $params, $criteria);
+        $this->assertEquals($questionsinqcat1 + $questionsinqcat2, $actualquestionscount);
+
+        // Verify there is just a single top-level category.
+        $criteria = array('contextid' => $qcat2->contextid, 'parent' => 0);
+        $this->assertEquals(1, $DB->count_records('question_categories', $criteria));
+
+        // Verify there is no question category in previous context.
+        $criteria = array('contextid' => $qcat1->contextid);
+        $this->assertEquals(0, $DB->count_records('question_categories', $criteria));
+    }
+
     public function test_question_remove_stale_questions_from_category() {
         global $DB;
         $this->resetAfterTest(true);
@@ -1304,4 +1352,150 @@ class core_questionlib_testcase extends advanced_testcase {
             }
         }
     }
+
+    /**
+     * question_sort_tags() includes the tags for all questions in the list.
+     */
+    public function test_question_sort_tags_includes_question_tags() {
+
+        list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('category');
+        $question1 = $questions[0];
+        $question2 = $questions[1];
+        $qcontext = context::instance_by_id($qcat->contextid);
+
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $qcontext, ['foo', 'bar']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $qcontext, ['baz', 'bop']);
+
+        foreach ($questions as $question) {
+            $tags = core_tag_tag::get_item_tags('core_question', 'question', $question->id);
+            $categorycontext = context::instance_by_id($qcat->contextid);
+            $tagobjects = question_sort_tags($tags, $categorycontext);
+            $expectedtags = [];
+            $actualtags = $tagobjects->tags;
+            foreach ($tagobjects->tagobjects as $tag) {
+                $expectedtags[$tag->id] = $tag->name;
+            }
+
+            // The question should have a tags property populated with each tag id
+            // and display name as a key vale pair.
+            $this->assertEquals($expectedtags, $actualtags);
+
+            $actualtagobjects = $tagobjects->tagobjects;
+            sort($tags);
+            sort($actualtagobjects);
+
+            // The question should have a full set of each tag object.
+            $this->assertEquals($tags, $actualtagobjects);
+            // The question should not have any course tags.
+            $this->assertEmpty($tagobjects->coursetagobjects);
+        }
+    }
+
+    /**
+     * question_sort_tags() includes course tags for all questions in the list.
+     */
+    public function test_question_sort_tags_includes_question_course_tags() {
+        global $DB;
+
+        list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('category');
+        $question1 = $questions[0];
+        $question2 = $questions[1];
+        $coursecontext = context_course::instance($course->id);
+
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $coursecontext, ['foo', 'bar']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $coursecontext, ['baz', 'bop']);
+
+        foreach ($questions as $question) {
+            $tags = core_tag_tag::get_item_tags('core_question', 'question', $question->id);
+            $tagobjects = question_sort_tags($tags, $qcat);
+
+            $expectedtags = [];
+            $actualtags = $tagobjects->coursetags;
+            foreach ($actualtags as $coursetagid => $coursetagname) {
+                $expectedtags[$coursetagid] = $coursetagname;
+            }
+
+            // The question should have a tags property populated with each tag id
+            // and display name as a key vale pair.
+            $this->assertEquals($expectedtags, $actualtags);
+
+            $actualtagobjects = $tagobjects->coursetagobjects;
+            sort($tags);
+            sort($actualtagobjects);
+
+            // The question should have a full set of each tag object.
+            $this->assertEquals($tags, $actualtagobjects);
+            // The question should not have any course tags.
+            $this->assertEmpty($tagobjects->tagobjects);
+        }
+    }
+
+    /**
+     * question_sort_tags() should return tags from all course contexts by default.
+     */
+    public function test_question_sort_tags_includes_multiple_courses_tags() {
+        global $DB;
+
+        list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('category');
+        $question1 = $questions[0];
+        $question2 = $questions[1];
+        $coursecontext = context_course::instance($course->id);
+        // Create a sibling course.
+        $siblingcourse = $this->getDataGenerator()->create_course(['category' => $course->category]);
+        $siblingcoursecontext = context_course::instance($siblingcourse->id);
+
+        // Create course tags.
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $coursecontext, ['c1']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $coursecontext, ['c1']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $siblingcoursecontext, ['c2']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $siblingcoursecontext, ['c2']);
+
+        foreach ($questions as $question) {
+            $tags = core_tag_tag::get_item_tags('core_question', 'question', $question->id);
+            $tagobjects = question_sort_tags($tags, $qcat);
+            $this->assertCount(2, $tagobjects->coursetagobjects);
+
+            foreach ($tagobjects->coursetagobjects as $tag) {
+                if ($tag->name == 'c1') {
+                    $this->assertEquals($coursecontext->id, $tag->taginstancecontextid);
+                } else {
+                    $this->assertEquals($siblingcoursecontext->id, $tag->taginstancecontextid);
+                }
+            }
+        }
+    }
+
+    /**
+     * question_sort_tags() should filter the course tags by the given list of courses.
+     */
+    public function test_question_sort_tags_includes_filter_course_tags() {
+        global $DB;
+
+        list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('category');
+        $question1 = $questions[0];
+        $question2 = $questions[1];
+        $coursecontext = context_course::instance($course->id);
+        // Create a sibling course.
+        $siblingcourse = $this->getDataGenerator()->create_course(['category' => $course->category]);
+        $siblingcoursecontext = context_course::instance($siblingcourse->id);
+
+        // Create course tags.
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $coursecontext, ['foo']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $coursecontext, ['bar']);
+        // Create sibling course tags. These should be filtered out.
+        core_tag_tag::set_item_tags('core_question', 'question', $question1->id, $siblingcoursecontext, ['filtered1']);
+        core_tag_tag::set_item_tags('core_question', 'question', $question2->id, $siblingcoursecontext, ['filtered2']);
+
+        foreach ($questions as $question) {
+            $tags = core_tag_tag::get_item_tags('core_question', 'question', $question->id);
+            $tagobjects = question_sort_tags($tags, $qcat, [$course]);
+            foreach ($tagobjects->coursetagobjects as $tag) {
+
+                // We should only be seeing course tags from $course. The tags from
+                // $siblingcourse should have been filtered out.
+                $this->assertEquals($coursecontext->id, $tag->taginstancecontextid);
+            }
+        }
+    }
+
 }
