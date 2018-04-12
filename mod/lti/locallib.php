@@ -924,7 +924,7 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
         $config->instructorchoiceacceptgrades = LTI_SETTING_NEVER;
         if (!$islti2 && isset($typeconfig['acceptgrades'])) {
             $acceptgrades = $typeconfig['acceptgrades'];
-            if ($acceptgrades == LTI_SETTING_DELEGATE) {
+            if ($acceptgrades == LTI_SETTING_DELEGATE || $acceptgrades == LTI_SETTING_ALWAYS) {
                 if (isset($item->lineItem)) {
                     $lineitem = $item->lineItem;
                     $config->instructorchoiceacceptgrades = LTI_SETTING_ALWAYS;
