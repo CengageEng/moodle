@@ -924,6 +924,10 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
         $config->instructorchoiceacceptgrades = LTI_SETTING_NEVER;
         if (!$islti2 && isset($typeconfig['acceptgrades'])) {
             $acceptgrades = $typeconfig['acceptgrades'];
+            if ($acceptgrades == LTI_SETTING_ALWAYS) {
+                // we create a line item regardless if the definition contains one or not
+                $config->instructorchoiceacceptgrades = LTI_SETTING_ALWAYS;
+            }
             if ($acceptgrades == LTI_SETTING_DELEGATE || $acceptgrades == LTI_SETTING_ALWAYS) {
                 if (isset($item->lineItem)) {
                     $lineitem = $item->lineItem;
@@ -942,8 +946,6 @@ function lti_tool_configuration_from_content_item($typeid, $messagetype, $ltiver
                         $config->cmidnumber = $lineitem->assignedActivity->activityId;
                     }
                 }
-            } else {
-                $config->instructorchoiceacceptgrades = $acceptgrades;
             }
         }
         $config->instructorchoicesendname = LTI_SETTING_NEVER;
