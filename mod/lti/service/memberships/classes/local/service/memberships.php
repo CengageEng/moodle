@@ -229,8 +229,10 @@ class memberships extends \mod_lti\local\ltiservice\service_base {
                                                                                      $user->id,
                                                                                      $lti->servicesalt,
                                                                                      $lti->typeid));
+                    // not per specification but added to comply with earlier version of that service impl
+                    $member->resultSourcedId = $message->lis_result_sourcedid;
                 }
-                $membership->message = $message;
+                $membership->message = [$message];
             }
 
             foreach ($includedcapabilities as $capabilityname => $capability) {
